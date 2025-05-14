@@ -54,7 +54,7 @@
     (init-field Type Literal)
     (super-new)))
 
-(define keywords (hasheq 
+(define keywords (hash
                         "fn" FUNCTION
                         "let" LET
                         "true" TRUE
@@ -65,7 +65,11 @@
                          ))
 
 (define (LookupIdent ident)
+  ;; (displayln "START: LookupIdent")
+  ;; (printf "ident: ~a\n" ident)
+  ;; (printf "len(ident): ~a\n" (string-length ident))
   (define tok (hash-ref keywords ident null))
+  ;; (printf "tok: ~a\n" tok)
   (if (null? tok)
     IDENT
     tok

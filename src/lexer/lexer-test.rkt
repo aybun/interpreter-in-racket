@@ -1,10 +1,10 @@
-#lang racket/base
+#lang racket
 
 (require rackunit)
 (require (prefix-in token. "../token/token.rkt"))
-(require "lexer.rkt" )
+(require (prefix-in lexer. "./lexer.rkt"))
 
-
+;; https://docs.racket-lang.org/rackunit/quick-start.html
 
 (define	input  "let five = 5;
 let ten = 10;
@@ -31,8 +31,8 @@ if (5 < 10) {
 (define-syntax-rule (go-items->list {f0, s0} ...) 
   (list (list f0 s0) ... ))
 (define tests (go-items->list 
-    {token.LET, "let"}
-		{token.IDENT, "five"}
+	        {token.LET, "let"}
+	        {token.IDENT, "five"}
 		{token.ASSIGN, "="}
 		{token.INT, "5"}
 		{token.SEMICOLON, ";"}
@@ -107,7 +107,18 @@ if (5 < 10) {
 		{token.EOF, ""}
 ))
 
-(displayln input)
-(displayln tests)
+(define l (lexer.New input))
+(define (run-tests)
+	(for/list ([tt tests]
+		   [i (in-naturals)]) ;0, 1, 2, ...
 
+		(let ([tok (send l NextToken)])
+			;; (display (format "In let : ~a\ntok : ~a ~a\n" i (get-field Type tok) (get-field Literal tok)))
+			(check-equal? (get-field Type tok) (first tt) "Token.Type Check")
+			(check-equal? (get-field Literal tok) (second tt) "Token.Literal Check")
+		)
+	)
+        (format "Done running ~a tests\n" (length tests))
 
+  )
+(run-tests)

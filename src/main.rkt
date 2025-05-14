@@ -20,11 +20,24 @@
     (super-new)))
 
 (define p (new Point [x 3] [y 4]))
-(send p distance) ; Returns 5
+(send p distance)
 (send p double-distance)
 (send p reset)
 (get-field x p)
 (get-field y p)
 
+
+(displayln "new exp:")
+
+
+(define keywords (hasheq
+                        "fn" "FUNCTION"
+                        "let" "LET"
+                         ))
+(define tok (hash-ref keywords "fn" null))
+(printf "tok: ~a\n" tok)
+
+
+(printf "~a\n" (= #\z #\=))
 
 

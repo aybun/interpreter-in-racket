@@ -3,74 +3,70 @@
 
 (require (prefix-in token. "../token/token.rkt"))
 
-; Define new interface to support named argument.
 (define Lexer
   (class object%
     (init-field input position readPosition ch tok)
     
     (define/public (readChar)
-      (
 
-        (if (>= position (string-length input) ) 
-          (set! ch #\0)
+        (if (>= readPosition (string-length input) )
+          (set! ch #\null)
           (set! ch (string-ref input readPosition))
         )
 
         (set! position readPosition)
         (set! readPosition (add1 readPosition))
-
-      ) 
+        ;; (displayln "done")
     )
 
 
     (define/public (skipWhitespace)
-        ( while (member ch (list #\space #\t #\n #\r))
-                ;Note, just to repeat.
-                ;This is a function call with 0 arguments.
+        ( while (char-whitespace? ch) ;built-in function : char-whitespace?
                 (readChar)
         )
     )
 
     (define/public (peekChar)
         ( if (>= readPosition (string-length input))
-             #\0
+             #\null
              (string-ref input readPosition)
         )
     )
 
 
     (define/public (readIdentifier)
-        (
+        ;; (
           (local [(define start position)]
             (while (isLetter ch) (readChar) )
             (substring input start position)
           )
             
-        )
+        ;; )
     )
 
 
     (define/public (readNumber)
-        (
+        ;; (
           (local [(define start position)]
             (while (isDigit ch) (readChar) )
             (substring input start position)
           )
-        )
+        ;; )
     )
 
 
   (define/public (NextToken)
-      (
+      ;; (
 
         (skipWhitespace)
-        
-        (set! tok 
+
+        (set! tok
           (case ch
-          [ (#\=)( 
-                   if (= (peekChar) #\=)
-                     (
+          [ (#\=)(
+                   if (char=? (peekChar) #\=)
+                     ( begin
                        #| (define temp-ch ch) |#
+                      ;; (displayln peek)
                        (readChar)
                        #| (define literal (string temp-ch ch)) |#
                        (newToken token.EQ "==")
@@ -79,7 +75,6 @@
                       newToken token.ASSIGN ch
                       )
                  )
-
           ]
           [
             (#\+) (newToken token.PLUS ch )
@@ -90,8 +85,8 @@
 
           ]
           [
-            (#\!) ( if (= (peekChar) #\=)
-                     (
+            (#\!) ( if (char=? (peekChar) #\=)
+                     (begin
                         #| (define temp-ch ch) |#
                         (readChar)
                         #| (define literal (string temp-ch ch)) |#
@@ -100,8 +95,8 @@
                      (
                         newToken token.BANG ch
                       )
-    
-                 ) 
+
+                 )
 
           ]
           [
@@ -128,53 +123,50 @@
           [
             (#\}) (newToken token.RBRACE ch)
           ]
-          [ 
+          [
             (#\() (newToken token.LPAREN ch)
           ]
           [
-            (#\)) (newToken token.RPAREN ch) 
+            (#\)) (newToken token.RPAREN ch)
           ]
           [
-            (#\0) (newToken token.EOF "")
+            (#\null) (newToken token.EOF "")
           ]
           [ else null
           ]
           )
         )
-        
+
         (if (null? tok)
           (
-              cond   
+              cond
               [
-                (isLetter ch)   (
+                (isLetter ch)   ( begin
                                   (set! tok (newToken "-" (readIdentifier)) )
                                   (set-field! Type tok (token.LookupIdent (get-field Literal tok) ) )
-
                                 )
-               
+
               ]
               [
-                (isDigit ch) (
+               (isDigit ch)
                                (set! tok (newToken token.INT (readNumber) ) )
-                              )
 
               ]
               [
-                else ( 
-                       (set! tok (newToken token.ILLEGAL ch)) 
-                       (readChar)
-
-                     )
+               else   (begin
+                        (set! tok (newToken token.ILLEGAL ch))
+                        (readChar)
+                       )
 
               ]
           )
           ( ;non-null branch
 
-            (readChar)
+             readChar
           )
         )
         tok
-      )
+      ;; )
   )
     ;; About to end.
 
@@ -182,7 +174,11 @@
 
 (define (New in)
   (define l (new Lexer [input in] [position 0] [readPosition 0] [ch #\0] [tok "tok"]) )
+  ;; (printf "in New : ~a\n" l)
   (send l readChar)
+  (get-field position l)
+  ;; (displayln "After readChar")
+  ;; (displayln l)
   l
 )
 
@@ -197,8 +193,10 @@
 ; Why is newToken here?
 ; Notice that n is in lowercase.
 ; That means it is meant to be called inside this package.
+; (~a ch) means casting ch to string.
 (define (newToken tokenType ch)  (
-                                     token.Token (tokenType (string ch) )
+                                  new token.Token [Type tokenType] [Literal (~a ch)]
                                   )
 )
 
+(provide (all-defined-out))
