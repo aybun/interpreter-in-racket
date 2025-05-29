@@ -40,4 +40,26 @@
 
 (printf "~a\n" (= #\z #\=))
 
+(define Animal
+  (class object%
+    (super-new)
+    (define/public (sound) null)
+))
 
+
+(define Mammal
+  (class Animal
+    (super-new)
+   )
+)
+
+
+(define Dog
+  (class Animal
+    (init-field name)
+    (super-new)
+    (define/override (sound) (format "helo ~a" name) ))
+)
+
+(define a (new Dog [name "Jones"] ))
+(send a sound)

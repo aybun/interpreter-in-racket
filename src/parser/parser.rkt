@@ -16,7 +16,7 @@
 
 
 (define precedences (hash
-    token.EQ       EQUALS
+  token.EQ       EQUALS
 	token.NOT_EQ   EQUALS
 	token.LT       LESSGREATER
 	token.GT       LESSGREATER

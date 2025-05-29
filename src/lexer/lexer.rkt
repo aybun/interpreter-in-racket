@@ -6,8 +6,8 @@
 (define Lexer
   (class object%
     (init-field input position readPosition ch tok)
-    
-    (define/public (readChar)
+    (super-new)
+    (define/private (readChar)
 
         (if (>= readPosition (string-length input) )
           (set! ch #\null)
@@ -20,13 +20,13 @@
     )
 
 
-    (define/public (skipWhitespace)
+    (define/private (skipWhitespace)
         ( while (char-whitespace? ch) ;built-in function : char-whitespace?
                 (readChar)
         )
     )
 
-    (define/public (peekChar)
+    (define/private (peekChar)
         ( if (>= readPosition (string-length input))
              #\null
              (string-ref input readPosition)
@@ -34,7 +34,7 @@
     )
 
 
-    (define/public (readIdentifier)
+    (define/private (readIdentifier)
         ;; (
           (local [(define start position)]
             (while (isLetter ch) (readChar) )
@@ -45,7 +45,7 @@
     )
 
 
-    (define/public (readNumber)
+    (define/pricate (readNumber)
         ;; (
           (local [(define start position)]
             (while (isDigit ch) (readChar) )
@@ -170,7 +170,7 @@
   )
     ;; About to end.
 
-    (super-new)))
+))
 
 (define (New in)
   (define l (new Lexer [input in] [position 0] [readPosition 0] [ch #\0] [tok "tok"]) )
