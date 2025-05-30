@@ -32,8 +32,47 @@
     (field errors curToken peekToken prefixParseFns infixParseFns)
     (init-field l)
     (super-new)
-    (define/private (initialize) (begin))
-    (initialize)
+    (define/private (initialize)
+      (begin
+
+        (set! erorrs '())
+        (set! curToken null)
+        (set! peekToken null)
+        (set! prefixParseFns (hash
+                                token.IDENT    parseIdentifier
+                                token.INT      parseIntegerLiteral
+                                token.BANG     parsePrefixExpression
+                                token.MINUS    parsePrefixExpression
+                                token.TRUE     parseBoolean
+                                token.FALSE    parseBoolean
+                                token.LPAREN   parseGroupedExpression
+                                token.IF       parseIfExpression
+                                token.FUNCTION parseFunctionLiteral
+                                ))
+
+        (set! infixParseFns (hash
+                                token.PLUS    parseInfixExpression
+                                token.MINUS      parseInfixExpression
+                                token.SLASH     parseInfixExpression
+                                token.ASTERISK    parseInfixExpression
+                                token.EQ    parseInfixExpression
+                                token.NOT_EQ    parseInfixExpression
+                                token.LT    parseInfixExpression
+                                token.GT    parseInfixExpression
+
+
+                                token.LPAREN    parseCallExpression
+
+
+                                ))
+        ;// Read two tokens, so curToken and peekToken are both set
+        (nextToken)
+        (nextToken)
+
+
+       );::END begin
+    );  ::END initialize
+    (initialize);; Might need to call at the bottom.
 
     (define/private (nextToken) (begin
                                   (set! curToken peekToken)
@@ -189,7 +228,7 @@
       )
     )
 
-    (define/private (parsePrefixExpression left)
+    (define/private (parsePrefixExpression)
       (define token curToken)
       (define operator (get-field Literal curToken))
 
@@ -200,6 +239,29 @@
       (new ast.PrefixExpression [Token token] [Operator operator] [Rigt right])
 
     )
+
+    (define/private (parseInfixexpression left)
+      (define token curToken)
+      (define operator (get-field Literal curToken))
+
+      (define precedence (curPrecedence))
+      (nextToken)
+      (define right (parseExpression precedence))
+
+      (new ast.InfixExpression [Token token] [Operator operator] [Left left] [Right right])
+    )
+
+    (define/private (parseBoolean)
+      (new ast.Boolean [Token curToken] [Value (curTokenIs token.TRUE)])
+    )
+
+    (define/private (parseGroupedExpression)
+      (nextToken)
+      (define exp (parseExpression LOWEST))
+      (if (not (expectPeek token.RPAREN)) null exp)
+    )
+
+
 
     (define/private (parseIfExpression)
       (define returnValue null)
@@ -242,21 +304,115 @@
     ); ::END parseIfExpression
 
     (define/private (parseBlockStatement)
+      (define token curToken)
+      (define statements '())
+      (nextToken)
 
+      (while (and (not (curTokenIs token.RBRACE))
+                  (not (curTokenIs token.EOF))
+             )
+
+             (begin
+               (define stmt (parseStatement))
+               (unless (null? stmt) (set! statements (append statements (list stmt))))
+               (nextToken)
+
+             )
+      )
+      
+      (new ast.BlockStatement [Token token] [Statements statements])
+    )
+
+    (define/private (parseFunctionLiteral)
+      (define returnValue null)
+
+      (while #t (begin
+                  (define token curToken)
+                  (unless (expectPeek token.LPAREN) (set! returnValue null) (break))
+                  (define parameters (parseFunctionParameters))
+                  (unless (expectPeek token.LBRACE) (set! returnValue null) (break))
+                  (define body (parseBlockStatement))
+                  (set! returnValue (new ast.FunctionLiteral
+                                         [Token token] [Parameters parameters ] [Body body] ))
+
+                 (break)
+                 ))
+
+      returnValue
 
     )
 
+    (define/private (parseFunctionParameters)
+      (define returnValue null)
+
+
+      (while #t (begin
+                  (define identifiers (list))
+
+                  (when (peekTokenIs token.RPAREN) (nextToken) (set! returnValue identifiers))
+
+                  (nextToken)
+
+                  (define ident (new ast.Identifier [Token curToken] [Value (get-field Literal curToken)]))
+                  (set! identifiers (append identifiers (list ident)))
+
+                  (while (peekTokenIs token.COMMA) (begin
+                                                     (nextToken)
+                                                     (nextToken)
+                                                     (set! ident (new ast.Identifer [Token curToken] [Value (get-field Literal curToken)]))
+                                                     (set! identifiers (append identifiers (list iden)))
+                                                     ))
+                  (unless (expectPeek token.RPAREN) (set! returnValue null) (break))
+
+                  (set! returnValue identifiers)
+                  (break)
+
+                 ))
+      
+      returnValue
+
+    ); :: parseFunctionParamenters
+
+    (define/private (parseCallExpression func)
+      (new ast.CallExpression [Token curToken] [Function func] [Arguments (parseCallArguments)])
+    )
+
+    (define/private (parseCallArguments)
+      (define returnValue null)
+      (while #t (begin
+                  (define args (list))
+
+                  (when (peekTokenIs token.RPAREN) (nextToken) (set! returnValue args) (break))
+
+                  (nextToken)
+
+                  (set! args (append args (list (parseExpression LOWEST))))
+
+                  (while (peekTokenIs token.COMMA) (begin
+                                                     (nextToken)
+                                                     (nextToken)
+                                                     (set! args (append args (list (parseExpression LOWEST))))
+
+                                                     ))
+
+                  (unless (expectPeek token.RPAREN) (set! returnValue null) (break))
+
+                  (set! returnValue args)
+
+                  (break)
+                 ))
+      returnValue
+    ); :: END parseCallArguments
+
+    ; ::Might not be needed.
+    (define/private (registerPrefix tokenType fn) (hash-set! prefixParseFns tokenType fn))
+
+    ; ::Might not be needed.
+    (define/private (registerInfix tokenType fn) (hash-set! infixfixParseFns tokenType fn))
 
 
   );; END class
 )
 
-(define (New l)
+(define (New l) (new Parser [l l]))
 
-(define erorrs '())
-  (define curToken null)
-  (define peekToken null)
-  (define prefixParseFns (hash
-                          token.IDENT
-                          ))
-)
