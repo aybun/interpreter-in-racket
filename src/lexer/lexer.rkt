@@ -3,6 +3,8 @@
 
 (require (prefix-in token. "../token/token.rkt"))
 
+(provide (except-out (all-defined-out) isLetter isDigit))
+
 (define Lexer
   (class object%
     (init-field input position readPosition ch tok)
@@ -45,7 +47,7 @@
     )
 
 
-    (define/pricate (readNumber)
+    (define/private (readNumber)
         ;; (
           (local [(define start position)]
             (while (isDigit ch) (readChar) )
@@ -169,17 +171,21 @@
       ;; )
   )
     ;; About to end.
+  (define/private (initialize)
+    (readChar)
 
+  )
+  (initialize)
 ))
 
 (define (New in)
-  (define l (new Lexer [input in] [position 0] [readPosition 0] [ch #\0] [tok "tok"]) )
+  (new Lexer [input in] [position 0] [readPosition 0] [ch #\0] [tok "tok"])
   ;; (printf "in New : ~a\n" l)
-  (send l readChar)
-  (get-field position l)
+  ;;(send l readChar)
+  ;;(get-field position l)
   ;; (displayln "After readChar")
   ;; (displayln l)
-  l
+  ;;l
 )
 
 
@@ -199,4 +205,3 @@
                                   )
 )
 
-(provide (all-defined-out))

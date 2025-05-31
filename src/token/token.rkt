@@ -1,6 +1,8 @@
 #lang racket
 ;(require racket/class)
 
+(provide (except-out (all-defined-out) define-mult-val))
+
 ; dzpower in 
 ; https://www.reddit.com/r/Racket/comments/cm1qe1/define_multiple_variables_at_once/
 (define-syntax-rule (define-mult-val (a b) ...)
@@ -75,7 +77,3 @@
     tok
   )
 )
-
-(provide (all-defined-out))
-
-

@@ -5,6 +5,8 @@
 (require (prefix-in lexer. "../lexer/lexer.rkt"))
 (require (prefix-in ast.   "../ast/ast.rkt"))
 
+(provide (all-defined-out))
+
 ;; (define _ 0)
 (define LOWEST 1)
 (define EQUALS 2)       ; ==
@@ -29,39 +31,36 @@
                          ))
 (define Parser
   (class object%
-    (field errors curToken peekToken prefixParseFns infixParseFns)
+    (field [errors '()] [curToken null] [peekToken null] [prefixParseFns null] [infixParseFns null])
     (init-field l)
     (super-new)
     (define/private (initialize)
       (begin
 
-        (set! erorrs '())
-        (set! curToken null)
-        (set! peekToken null)
         (set! prefixParseFns (hash
-                                token.IDENT    parseIdentifier
-                                token.INT      parseIntegerLiteral
-                                token.BANG     parsePrefixExpression
-                                token.MINUS    parsePrefixExpression
-                                token.TRUE     parseBoolean
-                                token.FALSE    parseBoolean
-                                token.LPAREN   parseGroupedExpression
-                                token.IF       parseIfExpression
-                                token.FUNCTION parseFunctionLiteral
+                                token.IDENT    'parseIdentifier
+                                token.INT      'parseIntegerLiteral
+                                token.BANG     'parsePrefixExpression
+                                token.MINUS    'parsePrefixExpression
+                                token.TRUE     'parseBoolean
+                                token.FALSE    'parseBoolean
+                                token.LPAREN   'parseGroupedExpression
+                                token.IF       'parseIfExpression
+                                token.FUNCTION 'parseFunctionLiteral
                                 ))
 
         (set! infixParseFns (hash
-                                token.PLUS    parseInfixExpression
-                                token.MINUS      parseInfixExpression
-                                token.SLASH     parseInfixExpression
-                                token.ASTERISK    parseInfixExpression
-                                token.EQ    parseInfixExpression
-                                token.NOT_EQ    parseInfixExpression
-                                token.LT    parseInfixExpression
-                                token.GT    parseInfixExpression
+                                token.PLUS       'parseInfixExpression
+                                token.MINUS      'parseInfixExpression
+                                token.SLASH      'parseInfixExpression
+                                token.ASTERISK   'parseInfixExpression
+                                token.EQ         'parseInfixExpression
+                                token.NOT_EQ     'parseInfixExpression
+                                token.LT         'parseInfixExpression
+                                token.GT         'parseInfixExpression
 
 
-                                token.LPAREN    parseCallExpression
+                                token.LPAREN     'parseCallExpression
 
 
                                 ))
@@ -79,6 +78,7 @@
                                   (set! peekToken (send l NextToken))))
 
     (define/private (curTokenIs t) (equal? (get-field Type curToken ) t))
+    (define/private (peekTokenIs t) (equal? (get-field Type peekToken ) t))
     (define/private (expectPeek t) (if (peekTokenIs t)
                                        (begin  (nextToken)   #t)
                                        (begin  (peekError t) #f)
@@ -116,32 +116,30 @@
     )
 
     (define/private (parseLetStatement)
-      ;; This is ugly. I may comeback to re-write this.
-      (define token curToken)
-      (if (not (expectPeek token.IDENT))
+      (define returnValue null)
+      (while #t (begin
 
-          null
+                  (define token curToken)
+                  (unless (expectPeek token.IDENT) (set! returnValue null) (break))
 
-         (begin
-           (define name (new ast.Identifier [Token curToken] [Value (get-field Literal curToken)] ))
-           (if (not (expectPeek token.ASSIGN))
+                  (define name (new ast.Identifier [Token curToken] [Value (get-field Literal curToken)] ))
 
-               null
+                  (unless (expectPeek token.ASSIGN) (set! returnValue null) (break))
+                  (nextToken)
 
-               (begin ;;again
-                 (nextToken)
-                 (define value (parseExpression LOWEST))
-                 (when (peekTokenIs token.SEMICOLO) (nextToken))
+                  (define value (parseExpression LOWEST))
 
-                 (define stmt (new ast.LetStatement [Token token] [Name name] [Value value]))
-                 stmt
+                  (when (peekTokenIs token.SEMICOLON) (nextToken))
 
-               );; END begin again
+                  (set! returnValue
+                        (new ast.LetStatement [Token token] [Name name] [Value value])
+                  )
 
-           )
-         );;END begin
-      )
-    )
+                  (break)
+                 )); :: END WHILE
+
+      returnValue
+    ); :: END parseLetStatement
 
     (define/private (parseReturnStatement)
       (define token curToken)
@@ -164,38 +162,41 @@
 
     )
 
-    (define/private (parseExpression precedence)
-      (define prefix (hash-ref prefixParseFns (get-field Type curToken) null))
+
+      (define/private (get-method-dynamically obj method-name)
+        (λ args
+          (apply dynamic-send obj method-name args)))
+
+      (define/private (parseExpression precedence)
       (define returnValue null)
-      (if (null? prefix)
+      (while true (begin
+                    (define prefix-symbol (hash-ref prefixParseFns (get-field Type curToken) null))
+                    (when (null? prefix-symbol) (set! returnValue null) (break))
 
-          (begin; ::THEN
-            (noPrefixParsFnError (get-field Type curToken))
-            (set! returnValue null)
-          )
 
-          (begin; ::ELSE
+                    (define prefix (get-method-dynamically this% prefix-symbol))
+                    (define leftExp (prefix))
+                    (while (and
+                            (not (peekTokenIs token.SEMICOLON))
+                            (< precedence (peekPrecedence))
+                           )
+                          (begin
 
-            (define leftExp (prefix))
-            (while (and
-                     (not (peekTokenIs token.SEMICOLON))
-                     (< precedence peekPrecedence)
-                   )
+                            (define infix-symbol (hash-ref infixParseFns (get-field Type curToken) null))
+                            (when (null? infix-symbol) (set! returnValue leftExp) (break))
 
-                   (begin
+                            (define infix (get-method-dynamically this% infix-symbol))
+                            (nextToken)
+                            (set! leftExp (infix leftExp))
+                          )
 
-                     (define infix (hash-ref infixParseFns (get-field Type curToken) null))
-                     (when (null? infix) (set! returnValue leftExp) (break))
-                     (nextToken)
-                     (set! leftExp (infix leftExp))
-                   )
-               
-            );; END WHILE
-            (set! returnValue leftExp)
-          ); ::END ELSE
+                    );; END WHILE
+                    (set! returnValue leftExp)
+
+                    (break)
+                  )
       )
 
-     ; :: RETURN ::
       returnValue
 
     )  ; :: END parseExpression
@@ -220,10 +221,8 @@
       (if (integer? value)
           (new ast.IntegerLiteral [Token token] [Value value])
 
-          (begin
-            (define msg (format "could not parse ~a as integer" (get-field Literal curToken)))
+          (let ([msg (format "could not parse ~a as integer" (get-field Literal curToken))])
             (set! errors (append errors (list msg)))
-            null
           )
       )
     )
@@ -359,8 +358,8 @@
                   (while (peekTokenIs token.COMMA) (begin
                                                      (nextToken)
                                                      (nextToken)
-                                                     (set! ident (new ast.Identifer [Token curToken] [Value (get-field Literal curToken)]))
-                                                     (set! identifiers (append identifiers (list iden)))
+                                                     (set! ident (new ast.Identifier [Token curToken] [Value (get-field Literal curToken)]))
+                                                     (set! identifiers (append identifiers (list ident)))
                                                      ))
                   (unless (expectPeek token.RPAREN) (set! returnValue null) (break))
 
@@ -408,7 +407,7 @@
     (define/private (registerPrefix tokenType fn) (hash-set! prefixParseFns tokenType fn))
 
     ; ::Might not be needed.
-    (define/private (registerInfix tokenType fn) (hash-set! infixfixParseFns tokenType fn))
+    (define/private (registerInfix tokenType fn) (hash-set! infixParseFns tokenType fn))
 
 
   );; END class

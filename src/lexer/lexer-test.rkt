@@ -109,8 +109,8 @@ if (5 < 10) {
 
 (define l (lexer.New input))
 (define (run-tests)
-	(for/list ([tt tests]
-		   [i (in-naturals)]) ;0, 1, 2, ...
+	(for/list ( [tt tests]
+		          [i (in-naturals)]) ;0, 1, 2, ...
 
 		(let ([tok (send l NextToken)])
 			;; (display (format "In let : ~a\ntok : ~a ~a\n" i (get-field Type tok) (get-field Literal tok)))
@@ -118,7 +118,8 @@ if (5 < 10) {
 			(check-equal? (get-field Literal tok) (second tt) "Token.Literal Check")
 		)
 	)
-        (format "Done running ~a tests\n" (length tests))
 
-  )
+  (format "Done running ~a tests\n" (length tests))
+
+)
 (run-tests)

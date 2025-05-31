@@ -1,5 +1,6 @@
 #lang racket
 
+(provide (all-defined-out))
 
 (define Node
   (class object%
@@ -73,7 +74,7 @@
 )
 
 
-(define ReturnStatement
+(define ExpressionStatement
   (class Statement
     (super-new)
     (init-field Token Expression)
@@ -174,7 +175,7 @@
                                (send Consequence String)
                                ")"
 
-                               (if (null? Alternative) (string-append "else " (send Alternative String)))
+                               (when (null? Alternative) (string-append "else " (send Alternative String)))
 
                                ))
 
@@ -183,7 +184,7 @@
 
 
 
-(define FuntionLiteral
+(define FunctionLiteral
   (class Expression
     (super-new)
     (init-field Token Parameters Body)
@@ -211,7 +212,7 @@
     (init-field Token Function Arguments)
     (define/override (TokenLiteral) (get-field Literal Token))
     (define/override (String) (begin
-                                (define args (map (lambda (e) (send e String)) Parameters))
+                                (define args (map (lambda (e) (send e String)) Arguments))
                                 (define joined-strings (string-join args ", "))
 
                                 (string-append (send Function String)
