@@ -21,9 +21,9 @@
 
 (define (TestLetStatements)
   (define tests (list
-      '("let x = 5;" "x" 5)
-      '("let y = true;" "y" true)
-      '("let foobar = y;" "foobar" "y")
+      (list "let x = 5;" "x" 5)
+      (list "let y = true;" "y" #t)
+      (list "let foobar = y;" "foobar" "y")
     )
   )
 
@@ -43,11 +43,15 @@
               (define stmts (get program Statements))
 
               (checkParserErrors p)
-              (check-equal? (length (stmts))              1 "CHECK len(statements)")
+              (displayln stmts)
+              (displayln input)
+              (check-equal? (length stmts)              1 "CHECK len(statements)")
               ;; (check-type)
 
               (define stmt (first stmts))
-              (testLetStatement (stmt)      expectedIdentifier)
+              (printf "stmt : ~a" stmt)
+              (printf "stmt.Value : ~a" (get stmt Value))
+              (testLetStatement stmt      expectedIdentifier)
               (testLiteralExpression (get stmt Value) expectedValue)
 
             );; ::END BEGIN
@@ -66,32 +70,40 @@
 
 
 
-(define (testLiteralExpression exp expected)
+(define (testLiteralExpression expr expected)
+  (printf "in testLiteralExpression\n")
+  (printf "expected : ~a\n" expected )
+  (printf "number? : ~a\n" (number? expected))
+  (printf "string? : ~a\n" (string? expected))
+  (printf "boolean? : ~a\n" (boolean? expected))
+
   (cond
-    [(number? expected) (testIntegerLiteral exp expected)]
-    [(string? expected) (testIdentifier exp expected)]
-    [(boolean? expected) (testBooleanLiteral exp expected)]
-    [else (fail "type of exp not handle. ")]
+    [(number? expected) (testIntegerLiteral expr expected)]
+    [(string? expected) (testIdentifier expr expected)]
+    [(boolean? expected) (testBooleanLiteral expr expected)]
+    [else (fail (format "type of exp not handle. given ~a\n" expected))]
   )
 )
 
 
 (define (testIntegerLiteral il value)
+  (printf "in testIntegerLiteral\n")
+  (displayln il)
   (check-equal? (is-a? il ast.IntegerLiteral) true)
   (check-equal? (get il Value) value)
-  (check-equal? (send il TokenLiteral) value)
+  (check-equal? (send il TokenLiteral) (format "~a" value))
 )
 
 (define (testIdentifier expr value)
   (check-equal? (is-a? expr ast.Identifier) true)
   (check-equal? (get expr Value) value)
-  (check-equal? (send expr TokenLiteral))
+  (check-equal? (send expr TokenLiteral) value)
 )
 
-(define (testBooleanLiteral exp value)
-  (check-equal? (is-a? exp ast.Boolean) true)
-  (check-equal? (get exp Value) value)
-  (check-equal? (send exp TokenLiteral) value)
+(define (testBooleanLiteral expr value)
+  (check-equal? (is-a? expr ast.Boolean) true)
+  (check-equal? (get expr Value) value)
+  (check-equal? (send expr TokenLiteral) "true")
 )
 
 (define (checkParserErrors p)

@@ -105,17 +105,25 @@
                                             (unless (null? stmt) (set-field! Statements program (append statements (list stmt))))
                                             (nextToken)
                                             ))
+      (printf "in ParseProgram \n ==program== ~a\n" program)
       program
     )
 
-    (define/private (parseStatement) (case (get-field Type curToken)
-                                       [(token.LET)    (parseLetStatement)]
-                                       [(token.RETURN) (parseReturnStatement)]
-                                       [ else          (parseExpressionStatement)]
-                                      )
+    (define/private (parseStatement)
+      ;; (printf "in parseStatement\n curToken.Type : ~a\n" (get-field Type curToken))
+      ;; (printf "~a\n" token.LET)
+      ;; (printf "~a\n" token.RETURN)
+      ;; (printf "Type == LET? : ~a\n" (equal? (get-field Type curToken) token.LET) )
+      (define type (get-field Type curToken))
+      (cond
+        [(equal? token.LET    type)    (parseLetStatement)]
+        [(equal? token.RETURN type)    (parseReturnStatement)]
+        [ else                         (parseExpressionStatement)]
+      )
     )
 
     (define/private (parseLetStatement)
+      (printf "in parseLetStatement\n")
       (define returnValue null)
       (while #t (begin
 
@@ -134,7 +142,7 @@
                   (set! returnValue
                         (new ast.LetStatement [Token token] [Name name] [Value value])
                   )
-
+                  (printf "In parseLetStatement ~a\n" returnValue )
                   (break)
                  )); :: END WHILE
 
@@ -153,6 +161,8 @@
     )
 
     (define/private (parseExpressionStatement)
+      (printf "in parseExpressionStatement\n")
+      (printf "curToken : ~a\n" curToken)
       (define token curToken)
       (define expression (parseExpression LOWEST))
       (when (peekTokenIs token.SEMICOLON) (nextToken))
@@ -163,19 +173,43 @@
     )
 
 
-      (define/private (get-method-dynamically obj method-name)
-        (λ args
-          (apply dynamic-send obj method-name args)))
+      (define/private (dynamicDispatchPrefix symbol)
+
+          (cond
+
+            [(equal? symbol 'parseIdentifier) (parseIdentifier)]
+            [(equal? symbol 'parseIntegerLiteral) (parseIntegerLiteral)]
+            [(equal? symbol 'parsePrefixExpression) (parsePrefixExpression)]
+            [(equal? symbol 'parseBoolean) (parseBoolean)]
+            [(equal? symbol 'parseGroupedExpression) (parseGroupedExpression)]
+            [(equal? symbol 'parseIfExpression) (parseIfExpression)]
+            [(equal? symbol 'parseFunctionLiteral) (parseFunctionLiteral)]
+
+            ;; This should never happend because symbol is assumed to exist.
+            ;; [else (raise "function does not exist : provided ~a"  (symbol->string symbol))]
+            [else null]
+          )
+       )
+
+      (define/private (dynamicDispatchInfix symbol expr)
+
+          (cond
+
+            [(equal? symbol 'parseInfixExpression) (parseInfixExpression expr)]
+            [(equal? symbol 'parseCallExpression) (parseCallExpression expr)]
+            ;; This should never happend because symbol is assumed to exist.
+            [else null]
+          )
+       )
 
       (define/private (parseExpression precedence)
       (define returnValue null)
-      (while true (begin
+      (while #t (begin
                     (define prefix-symbol (hash-ref prefixParseFns (get-field Type curToken) null))
                     (when (null? prefix-symbol) (set! returnValue null) (break))
 
 
-                    (define prefix (get-method-dynamically this% prefix-symbol))
-                    (define leftExp (prefix))
+                    (define leftExp (dynamicDispatchPrefix prefix-symbol))
                     (while (and
                             (not (peekTokenIs token.SEMICOLON))
                             (< precedence (peekPrecedence))
@@ -185,9 +219,9 @@
                             (define infix-symbol (hash-ref infixParseFns (get-field Type curToken) null))
                             (when (null? infix-symbol) (set! returnValue leftExp) (break))
 
-                            (define infix (get-method-dynamically this% infix-symbol))
+                            ;; (define infix (get-method-dynamically this infix-symbol))
                             (nextToken)
-                            (set! leftExp (infix leftExp))
+                            (set! leftExp (dynamicDispatchInfix infix-symbol leftExp))
                           )
 
                     );; END WHILE
@@ -216,6 +250,7 @@
     )
 
     (define/private (parseIntegerLiteral)
+      (printf "in parseIntegerLiteral\n")
       (define token curToken)
       (define value (string->number (get-field Literal curToken)))
       (if (integer? value)
@@ -239,7 +274,7 @@
 
     )
 
-    (define/private (parseInfixexpression left)
+    (define/private (parseInfixExpression left)
       (define token curToken)
       (define operator (get-field Literal curToken))
 
