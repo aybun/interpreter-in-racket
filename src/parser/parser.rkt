@@ -99,13 +99,14 @@
 
     (define/public (ParseProgram)
       (define program (new ast.Program [Statements (list)] ))
+      (printf "in ParseProgram \n ==program== ~a\n" program)
       (while (not (curTokenIs token.EOF)) (begin
                                             (define stmt (parseStatement))
                                             (define statements (get-field Statements program))
                                             (unless (null? stmt) (set-field! Statements program (append statements (list stmt))))
                                             (nextToken)
+                                            (printf "lenght statements : ~a\n" (length (get-field Statements program)) )
                                             ))
-      (printf "in ParseProgram \n ==program== ~a\n" program)
       program
     )
 
@@ -162,18 +163,20 @@
 
     (define/private (parseExpressionStatement)
       (printf "in parseExpressionStatement\n")
-      (printf "curToken : ~a\n" curToken)
+      (printf "curToken : ~a\n" (get-field Literal curToken))
       (define token curToken)
       (define expression (parseExpression LOWEST))
+      (define stmt (new ast.ExpressionStatement [Token token ] [Expression expression]))
+
       (when (peekTokenIs token.SEMICOLON) (nextToken))
 
-      (define stmt (new ast.ExpressionStatement [Token token ] [Expression expression]))
       stmt
-
     )
 
 
       (define/private (dynamicDispatchPrefix symbol)
+          (printf "in dynamicDispatchPrefix\n")
+
 
           (cond
 
@@ -186,50 +189,63 @@
             [(equal? symbol 'parseFunctionLiteral) (parseFunctionLiteral)]
 
             ;; This should never happend because symbol is assumed to exist.
-            ;; [else (raise "function does not exist : provided ~a"  (symbol->string symbol))]
-            [else null]
+            [else (raise "function does not exist : provided ~a"  (symbol->string symbol))]
+            ;; [else null]
           )
        )
 
       (define/private (dynamicDispatchInfix symbol expr)
+
+        (printf "in dynamicDispatchInfix\n")
+
 
           (cond
 
             [(equal? symbol 'parseInfixExpression) (parseInfixExpression expr)]
             [(equal? symbol 'parseCallExpression) (parseCallExpression expr)]
             ;; This should never happend because symbol is assumed to exist.
-            [else null]
+            [else (raise "function does not exist : provided ~a"  (symbol->string symbol))]
+            ;; [else null]
           )
        )
 
       (define/private (parseExpression precedence)
+      (printf "in parseExpression\n")
       (define returnValue null)
       (while #t (begin
-                    (define prefix-symbol (hash-ref prefixParseFns (get-field Type curToken) null))
-                    (when (null? prefix-symbol) (set! returnValue null) (break))
+                    (define prefixSymbol (hash-ref prefixParseFns (get-field Type curToken) null))
+                    (when (null? prefixSymbol) (noPrefixParseFnError (get-field Type curToken)) (set! returnValue null) (break))
 
 
-                    (define leftExp (dynamicDispatchPrefix prefix-symbol))
+                    (define leftExp (dynamicDispatchPrefix prefixSymbol))
+                    (define cont #t)
                     (while (and
-                            (not (peekTokenIs token.SEMICOLON))
-                            (< precedence (peekPrecedence))
+                              cont
+                              (not (peekTokenIs token.SEMICOLON))
+                              (< precedence (peekPrecedence))
                            )
                           (begin
 
-                            (define infix-symbol (hash-ref infixParseFns (get-field Type curToken) null))
-                            (when (null? infix-symbol) (set! returnValue leftExp) (break))
-
-                            ;; (define infix (get-method-dynamically this infix-symbol))
-                            (nextToken)
-                            (set! leftExp (dynamicDispatchInfix infix-symbol leftExp))
+                            (define infixSymbol (hash-ref infixParseFns (get-field Type peekToken) null))
+                            (printf "infixSymbol : ~a\n" infixSymbol)
+                            (if (null? infixSymbol)
+                                (begin
+                                  (set! returnValue leftExp)
+                                  (set! cont #f)
+                                )
+                                (begin
+                                    (nextToken)
+                                    (set! leftExp (dynamicDispatchInfix infixSymbol leftExp))
+                                )
+                            )
                           )
-
                     );; END WHILE
+
                     (set! returnValue leftExp)
 
                     (break)
                   )
-      )
+             )
 
       returnValue
 
@@ -263,6 +279,7 @@
     )
 
     (define/private (parsePrefixExpression)
+      (printf "in parsePrefixExpression\n")
       (define token curToken)
       (define operator (get-field Literal curToken))
 
@@ -275,6 +292,7 @@
     )
 
     (define/private (parseInfixExpression left)
+      (printf "in parseInfixExpression\n")
       (define token curToken)
       (define operator (get-field Literal curToken))
 

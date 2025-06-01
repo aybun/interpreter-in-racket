@@ -194,6 +194,65 @@
   )
 ); :: END TestParsingPrefixExpressions
 
+(define (TestParsingInfixExpressions)
+
+  (define tests
+            (list
+              (list "5 + 5;"  5  "+"  5)
+              (list "5 - 5;"  5  "-"  5)
+              (list "5 * 5;"  5  "*"  5)
+              (list "5 / 5;"  5  "/"  5)
+              (list "5 > 5;"  5  ">"  5)
+              (list "5 < 5;"  5  "<"  5)
+              (list "5 == 5;"  5  "=="  5)
+              (list "5 != 5;"  5  "!="  5)
+              (list "foobar + barfoo;"  "foobar"  "+"  "barfoo")
+              (list "foobar - barfoo;"  "foobar"  "-"  "barfoo")
+              (list "foobar * barfoo;"  "foobar"  "*"  "barfoo")
+              (list "foobar / barfoo;"  "foobar"  "/"  "barfoo")
+              (list "foobar > barfoo;"  "foobar"  ">"  "barfoo")
+              (list "foobar < barfoo;"  "foobar"  "<"  "barfoo")
+              (list "foobar == barfoo;"  "foobar"  "=="  "barfoo")
+              (list "foobar != barfoo;"  "foobar"  "!="  "barfoo")
+              (list "true == true"  true  "=="  true)
+              (list "true != false"  true  "!="  false)
+              (list "false == false"  false  "=="  false))
+  )
+
+
+  (for/list ([tt tests ]
+             [i (in-naturals)]) ; 0, 1, 2, ...
+    (begin
+              (define input  (first  tt))
+              (define leftValue(second tt))
+              (define operator (third tt))
+              (define rightValue (fourth tt))
+
+              (define l (lexer.New input))
+              (define p (parser.New l))
+              (define program (send p ParseProgram ))
+              (checkParserErrors p)
+
+              (define stmts (get program Statements))
+              (check-equal? (length stmts) 1 "CHECK len(statements)")
+
+              (printf "in TestParseInfixExpressions:\n")
+              (printf "i : ~a\n" i)
+              (printf "input : ~a\n" input)
+              ;; (printf "first : ~a second : ~a third : ~a\n"
+              ;;         (send (first stmts) TokenLiteral)
+              ;;         (send (second stmts) TokenLiteral)
+              ;;         (send (third stmts) TokenLiteral))
+
+              (define stmt (first stmts))
+              (check-equal? (is-a? stmt ast.ExpressionStatement) true)
+
+              (testInfixExpression (get stmt Expression) leftValue operator rightValue)
+
+    )
+  )
+); :: END TestParsingInfixExpressions
+
 (define (testLetStatement statement name)
   (check-equal? (send statement TokenLiteral) "let" "CHECK Literal=='let'")
   (check-equal? (is-a? statement ast.LetStatement) true "CHECK class")
@@ -248,6 +307,12 @@
   )
 )
 
+(define (testInfixExpression expr left operator right)
+  (check-equal? (is-a? expr ast.InfixExpression) true)
+  (testLiteralExpression (get expr Left) left)
+  (check-equal? (get expr Operator) operator)
+  (testLiteralExpression (get expr Right) right)
+)
 
 ;; RUNNING TESTS
 (TestLetStatements)
@@ -255,3 +320,4 @@
 (TestIdentifierExpression)
 (TestIntegerLiteralExpression)
 (TestParsingPrefixExpressions)
+(TestParsingInfixExpressions)
