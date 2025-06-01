@@ -117,11 +117,82 @@
 
               (define ident (get stmt Expression))
               (check-equal? (is-a? ident ast.Identifier) true)
+              (check-equal? (get ident Value) "foobar")
               (check-equal? (send ident TokenLiteral) "foobar")
     )
   )
 ); :: END TestIdentifierExpression
 
+(define (TestIntegerLiteralExpression)
+
+  (define tests (list
+                  (list "5;")))
+
+  (for/list ([tt tests ]
+             [i (in-naturals)]) ; 0, 1, 2, ...
+    (begin
+              (define input  (first  tt))
+
+              (define l (lexer.New input))
+              (define p (parser.New l))
+              (define program (send p ParseProgram ))
+              (checkParserErrors p)
+
+
+              (define stmts (get program Statements))
+              (check-equal? (length stmts) 1 "CHECK len(statements)")
+
+              (define stmt (first stmts))
+              (check-equal? (is-a? stmt ast.ExpressionStatement) true)
+
+              (define literal (get stmt Expression))
+              (check-equal? (is-a? literal ast.IntegerLiteral) true)
+              (check-equal? (get literal Value) 5)
+              (check-equal? (send literal TokenLiteral) "5")
+    )
+  )
+); :: END TestIntegerLiteralExpression
+
+
+(define (TestParsingPrefixExpressions)
+
+  (define tests   (list
+                    (list "!5;" "!" 5)
+                    (list "-15;" "-" 15)
+                    (list "!foobar;" "!" "foobar")
+                    (list "-foobar;" "-" "foobar")
+                    (list "!true;" "!" true)
+                    (list "!false;" "!" false)))
+
+
+  (for/list ([tt tests ]
+             [i (in-naturals)]) ; 0, 1, 2, ...
+    (begin
+              (define input  (first  tt))
+              (define operator (second tt))
+              (define value (third tt))
+
+
+              (define l (lexer.New input))
+              (define p (parser.New l))
+              (define program (send p ParseProgram ))
+              (checkParserErrors p)
+
+
+              (define stmts (get program Statements))
+              (check-equal? (length stmts) 1 "CHECK len(statements)")
+
+              (define stmt (first stmts))
+              (check-equal? (is-a? stmt ast.ExpressionStatement) true)
+
+              (define expr (get stmt Expression))
+              (check-equal? (is-a? expr ast.PrefixExpression) true)
+              (check-equal? (get expr Operator) operator)
+              (printf "in TestParsingPrefixExpression here\n")
+              (testLiteralExpression (get expr Right) value)
+    )
+  )
+); :: END TestParsingPrefixExpressions
 
 (define (testLetStatement statement name)
   (check-equal? (send statement TokenLiteral) "let" "CHECK Literal=='let'")
@@ -165,7 +236,7 @@
 (define (testBooleanLiteral expr value)
   (check-equal? (is-a? expr ast.Boolean) true)
   (check-equal? (get expr Value) value)
-  (check-equal? (send expr TokenLiteral) "true")
+  (check-equal? (send expr TokenLiteral) (cond [value "true"] [(not value) "false"]))
 )
 
 (define (checkParserErrors p)
@@ -182,3 +253,5 @@
 (TestLetStatements)
 (TestReturnStatements)
 (TestIdentifierExpression)
+(TestIntegerLiteralExpression)
+(TestParsingPrefixExpressions)

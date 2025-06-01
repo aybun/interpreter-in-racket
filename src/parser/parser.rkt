@@ -270,7 +270,7 @@
 
       (define right (parseExpression PREFIX))
 
-      (new ast.PrefixExpression [Token token] [Operator operator] [Rigt right])
+      (new ast.PrefixExpression [Token token] [Operator operator] [Right right])
 
     )
 
