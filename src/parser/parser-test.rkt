@@ -7,6 +7,12 @@
 (require (prefix-in parser. "parser.rkt"))
 
 
+;; TODO
+;; Jumping between zones defined in the code base
+;; Code ToC similar to book ToC
+;; Fast Code Navigation
+
+
 (define-syntax-rule (get obj field)
   (get-field field obj)
 )
@@ -40,25 +46,81 @@
               (define p (parser.New l))
               (define program (send p ParseProgram ))
 
-              (define stmts (get program Statements))
-
               (checkParserErrors p)
-              (displayln stmts)
-              (displayln input)
-              (check-equal? (length stmts)              1 "CHECK len(statements)")
-              ;; (check-type)
+
+              (define stmts (get program Statements))
+              (check-equal? (length stmts) 1 "CHECK len(statements)")
 
               (define stmt (first stmts))
-              (printf "stmt : ~a" stmt)
-              (printf "stmt.Value : ~a" (get stmt Value))
               (testLetStatement stmt      expectedIdentifier)
               (testLiteralExpression (get stmt Value) expectedValue)
 
             );; ::END BEGIN
   );; :: END FOR
 
-)
+) ;; END TestLetStatement
 
+
+(define (TestReturnStatements)
+  (define tests (list
+                  (list "return 5;"  5 )
+                  (list "return true;" true )
+                  (list "return foobar;" "foobar")))
+
+  (for/list ([tt tests ]
+             [i (in-naturals)]) ; 0, 1, 2, ...
+    (begin
+              (define input              (first  tt))
+              (define expectedValue      (second tt))
+
+
+              (define l (lexer.New input))
+              (define p (parser.New l))
+              (define program (send p ParseProgram ))
+              (checkParserErrors p)
+
+
+              (define stmts (get program Statements))
+              (check-equal? (length stmts) 1 "CHECK len(statements)")
+
+              (define stmt (first stmts))
+              (check-equal? (is-a? stmt ast.ReturnStatement) true)
+              (testLiteralExpression (get stmt ReturnValue) expectedValue)
+
+    )
+
+  ); :: END FOR
+
+); :: END TestReutnrStatements
+
+(define (TestIdentifierExpression)
+
+  (define tests (list
+                  (list "foobar;")))
+
+  (for/list ([tt tests ]
+             [i (in-naturals)]) ; 0, 1, 2, ...
+    (begin
+              (define input  (first  tt))
+
+              (define l (lexer.New input))
+              (define p (parser.New l))
+              (define program (send p ParseProgram ))
+              (checkParserErrors p)
+
+
+              (define stmts (get program Statements))
+              (check-equal? (length stmts) 1 "CHECK len(statements)")
+
+              (define stmt (first stmts))
+              (check-equal? (is-a? stmt ast.ExpressionStatement) true)
+
+              (define ident (get stmt Expression))
+              (check-equal? (is-a? ident ast.Identifier) true)
+              (check-equal? (send ident TokenLiteral) "foobar")
+    )
+  )
+); :: END TestIdentifierExpression
 
 
 (define (testLetStatement statement name)
@@ -71,11 +133,11 @@
 
 
 (define (testLiteralExpression expr expected)
-  (printf "in testLiteralExpression\n")
-  (printf "expected : ~a\n" expected )
-  (printf "number? : ~a\n" (number? expected))
-  (printf "string? : ~a\n" (string? expected))
-  (printf "boolean? : ~a\n" (boolean? expected))
+  ;; (printf "in testLiteralExpression\n")
+  ;; (printf "expected : ~a\n" expected )
+  ;; (printf "number? : ~a\n" (number? expected))
+  ;; (printf "string? : ~a\n" (string? expected))
+  ;; (printf "boolean? : ~a\n" (boolean? expected))
 
   (cond
     [(number? expected) (testIntegerLiteral expr expected)]
@@ -87,7 +149,7 @@
 
 
 (define (testIntegerLiteral il value)
-  (printf "in testIntegerLiteral\n")
+  ;; (printf "in testIntegerLiteral\n")
   (displayln il)
   (check-equal? (is-a? il ast.IntegerLiteral) true)
   (check-equal? (get il Value) value)
@@ -118,3 +180,5 @@
 
 ;; RUNNING TESTS
 (TestLetStatements)
+(TestReturnStatements)
+(TestIdentifierExpression)
