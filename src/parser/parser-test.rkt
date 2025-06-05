@@ -525,6 +525,7 @@
 
 ) ; END TestFunctionLiteralParsing
 
+
 (define (TestFunctionParameterParsing)
   (displayln "in TestFunctionParameterParsing")
   (define tests    (list
@@ -560,6 +561,102 @@
     )
   )
 ); :: END TestFunctionParameterParsing
+
+
+(define (TestCallExpressionParsing)
+
+  (define tests (list (list "add(1, 2 * 3, 4 + 5)")))
+
+
+  (for/list ([tt tests]
+             [i (in-naturals 0)])
+    (begin
+      (define input  (first  tt))
+
+      (define l (lexer.New input))
+      (define p (parser.New l))
+      (define program (send p ParseProgram ))
+      (checkParserErrors p)
+
+      (define stmts (get program Statements))
+      (check-equal? (length stmts) 1 "CHECK len(statements)")
+
+      (define stmt (first stmts))
+      (check-equal? (is-a? stmt ast.ExpressionStatement) #t)
+
+      (define expr (get stmt Expression))
+      (check-equal? (is-a? expr ast.CallExpression) #t)
+
+      (testIdentifier (get expr Function) "add")
+
+      (check-equal? (length (get expr Arguments)) 3)
+
+      (testLiteralExpression (first (get expr Arguments)) 1)
+
+      (testInfixExpression (second (get expr Arguments)) 2 "*" 3)
+
+      (testInfixExpression (third (get expr Arguments)) 4 "+" 5)
+
+    )
+  )
+);; END TestCallExpressionParsing
+
+(define (TestCallExpressionParameterParsing)
+  (define tests '(
+                      (
+                       "add();"
+                       "add"
+                       ()
+                       )
+                      (
+                       "add(1);"
+                       "add"
+                       ("1")
+                       )
+                      (
+                       "add(1, 2 * 3, 4 + 5);"
+                       "add"
+                       ("1"  "(2 * 3)"  "(4 + 5)")
+                       )
+                 ))
+
+  (for/list ([tt tests]
+             [i (in-naturals 0)])
+    (begin
+      (define input  (first  tt))
+      (define expectedIdent (second tt))
+      (define expectedArgs (third  tt))
+
+      (define l (lexer.New input))
+      (define p (parser.New l))
+      (define program (send p ParseProgram ))
+      (checkParserErrors p)
+
+      (define stmts (get program Statements))
+
+      (define stmt (first stmts))
+      (check-equal? (is-a? stmt ast.ExpressionStatement) #t)
+
+      (define expr (get stmt Expression))
+      (check-equal? (is-a? expr ast.CallExpression) #t)
+
+      (testIdentifier (get expr Function) expectedIdent)
+
+      (check-equal? (length  (get expr Arguments)) (length expectedArgs))
+
+      (for/list ([actual (get expr Arguments)]
+                 [expected expectedArgs])
+        (check-equal? (send actual String) expected)
+      )
+
+    )
+  )
+
+
+); END  TestCallExpressionParameterParsing
+
+
+
 ; :: Start helper functions
 
 
@@ -637,3 +734,5 @@
 (TestIfElseExpression)
 (TestFunctionLiteralParsing)
 (TestFunctionParameterParsing)
+(TestCallExpressionParsing)
+(TestCallExpressionParameterParsing)
