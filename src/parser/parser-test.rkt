@@ -387,8 +387,6 @@
               (define program (send p ParseProgram ))
               (checkParserErrors p)
 
-              (define actual (send program String))
-
               (define stmts (get program Statements))
               (check-equal? (length stmts) 1 "CHECK len(statements)")
 
@@ -404,6 +402,91 @@
             )
   )
 ); END TestBooleanExpression
+
+(define (TestIfExpression)
+  (displayln "In TestIfExpression")
+  (define tests (list (list "if (x < y) { x }")))
+
+    (for/list ([tt tests]
+               [i (in-naturals 1)]) ;1, 2, 3, ...
+            (begin
+              (define input  (first  tt))
+
+              (define l (lexer.New input))
+              (define p (parser.New l))
+              (define program (send p ParseProgram ))
+              (checkParserErrors p)
+
+
+              (define stmts (get program Statements))
+              (check-equal? (length stmts) 1 "CHECK len(statements)")
+
+              (define stmt (first stmts))
+              (check-equal? (is-a? stmt ast.ExpressionStatement) #t)
+
+              (define expr (get stmt Expression))
+              (check-equal? (is-a? expr ast.IfExpression) #t)
+
+              (testInfixExpression (get expr Condition) "x" "<" "y")
+
+              (check-equal? (length (get-nested-2 expr Consequence Statements)) 1)
+
+              (define consequence (first (get-nested-2 expr Consequence Statements)))
+              (check-equal? (is-a? consequence ast.ExpressionStatement) #t)
+
+              (testIdentifier (get consequence Expression) "x")
+
+              (check-equal? (null? (get expr Alternative)) #t)
+
+            )
+  )
+
+); END TestIfExpression
+
+
+(define (TestIfElseExpression)
+  (displayln "in TestIfElseExpression")
+  (define tests (list (list "if (x < y) { x } else { y }")))
+
+  (for/list ([tt tests]
+             [i (in-naturals 1)])
+    (begin
+      (define input  (first  tt))
+
+      (define l (lexer.New input))
+      (define p (parser.New l))
+      (define program (send p ParseProgram ))
+      (checkParserErrors p)
+
+      (define stmts (get program Statements))
+      (check-equal? (length stmts) 1 "CHECK len(statements)")
+
+      (define stmt (first stmts))
+      (check-equal? (is-a? stmt ast.ExpressionStatement) #t)
+
+      (define expr (get stmt Expression))
+      (check-equal? (is-a? expr ast.IfExpression) #t)
+
+      (testInfixExpression (get expr Condition) "x" "<" "y")
+
+      (check-equal? (length (get-nested-2 expr Consequence Statements)) 1)
+
+      (define consequence (first (get-nested-2 expr Consequence Statements)))
+      (check-equal? (is-a? consequence ast.ExpressionStatement) #t)
+
+      (testIdentifier (get consequence Expression) "x")
+
+      (check-equal? (length (get-nested-2 expr Alternative Statements)) 1)
+
+      (define alternative (first (get-nested-2 expr Alternative Statements)))
+      (check-equal? (is-a? alternative ast.ExpressionStatement) #t)
+      (testIdentifier (get alternative Expression) "y")
+    )
+  )
+
+); :: END TestIfElseExpression
+
+
 ; :: Start helper functions
 
 
@@ -477,3 +560,5 @@
 (TestParsingInfixExpressions)
 (TestOperatorPrecedenceParsing)
 (TestBooleanExpression)
+(TestIfExpression)
+(TestIfElseExpression)
