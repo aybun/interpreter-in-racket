@@ -371,7 +371,39 @@
 
             )
   )
-)
+);; END TestOperatorPrecedenceParsing
+
+(define (TestBooleanExpression)
+  (define tests (list (list "true;" #t) (list "false;" #f)))
+
+  (for/list ([tt tests]
+             [i (in-naturals 1)]) ;1, 2, 3, ...
+            (begin
+              (define input  (first  tt))
+              (define expectedBoolean (second tt))
+
+              (define l (lexer.New input))
+              (define p (parser.New l))
+              (define program (send p ParseProgram ))
+              (checkParserErrors p)
+
+              (define actual (send program String))
+
+              (define stmts (get program Statements))
+              (check-equal? (length stmts) 1 "CHECK len(statements)")
+
+              (define stmt (first stmts))
+              (check-equal? (is-a? stmt ast.ExpressionStatement) #t)
+
+              (define expr (get stmt Expression))
+              (check-equal? (is-a? expr ast.Boolean) #t)
+
+              (check-equal? (get expr Value) expectedBoolean)
+
+
+            )
+  )
+); END TestBooleanExpression
 ; :: Start helper functions
 
 
@@ -444,3 +476,4 @@
 (TestParsingPrefixExpressions)
 (TestParsingInfixExpressions)
 (TestOperatorPrecedenceParsing)
+(TestBooleanExpression)
