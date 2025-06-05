@@ -486,7 +486,80 @@
 
 ); :: END TestIfElseExpression
 
+(define (TestFunctionLiteralParsing)
+  (displayln "in TestFunctionLiteralParsing")
+  (define tests (list (list "fn(x, y) { x + y; }")))
 
+
+  (for/list ([tt tests]
+             [i (in-naturals 1)])
+    (begin
+      (define input  (first  tt))
+
+      (define l (lexer.New input))
+      (define p (parser.New l))
+      (define program (send p ParseProgram ))
+      (checkParserErrors p)
+
+      (define stmts (get program Statements))
+      (check-equal? (length stmts) 1 "CHECK len(statements)")
+
+      (define stmt (first stmts))
+      (check-equal? (is-a? stmt ast.ExpressionStatement) #t)
+
+      (define function (get stmt Expression))
+      (check-equal? (is-a? function ast.FunctionLiteral) #t)
+      (check-equal? (length (get function Parameters)) 2)
+
+      (testLiteralExpression (first (get function Parameters)) "x")
+      (testLiteralExpression (second (get function Parameters)) "y")
+
+      (check-equal? (length (get-nested-2 function Body Statements)) 1)
+
+      (define bodyStmt (first (get-nested-2 function Body Statements)))
+      (check-equal? (is-a? bodyStmt ast.ExpressionStatement) #t)
+
+      (testInfixExpression (get bodyStmt Expression) "x" "+" "y")
+    )
+  )
+
+) ; END TestFunctionLiteralParsing
+
+(define (TestFunctionParameterParsing)
+  (displayln "in TestFunctionParameterParsing")
+  (define tests    (list
+                     (list "fn() {};" (list))
+                     (list "fn(x) {};" (list "x"))
+                     (list "fn(x, y, z) {};" (list "x" "y" "z"))
+                     ))
+
+  (for/list ([tt tests]
+             [i (in-naturals 0)])
+    (begin
+      (define input  (first  tt))
+      (define expectedParams (second tt))
+
+      (define l (lexer.New input))
+      (define p (parser.New l))
+      (define program (send p ParseProgram ))
+      (checkParserErrors p)
+
+      (define stmts (get program Statements))
+      (define stmt (first stmts))
+      (define function (get stmt Expression))
+
+      (check-equal? (length (get function Parameters)) (length expectedParams))
+
+      (for/list ([j (in-naturals 0)]
+                 [ident expectedParams]
+                 [actual (get function Parameters)])
+        (begin
+          (testLiteralExpression actual ident)
+        )
+      )
+    )
+  )
+); :: END TestFunctionParameterParsing
 ; :: Start helper functions
 
 
@@ -562,3 +635,5 @@
 (TestBooleanExpression)
 (TestIfExpression)
 (TestIfElseExpression)
+(TestFunctionLiteralParsing)
+(TestFunctionParameterParsing)

@@ -356,6 +356,7 @@
     ); ::END parseIfExpression
 
     (define/private (parseBlockStatement)
+      (printf "in parseBlockStatement\n")
       (define token curToken)
       (define statements '())
       (nextToken)
@@ -376,6 +377,7 @@
     )
 
     (define/private (parseFunctionLiteral)
+      (printf "in parseFunctionLiteral\n")
       (define returnValue null)
 
       (while #t (begin
@@ -395,13 +397,14 @@
     )
 
     (define/private (parseFunctionParameters)
+      (printf "in parseFunctionParameters\n")
       (define returnValue null)
 
 
       (while #t (begin
                   (define identifiers (list))
 
-                  (when (peekTokenIs token.RPAREN) (nextToken) (set! returnValue identifiers))
+                  (when (peekTokenIs token.RPAREN) (nextToken) (set! returnValue identifiers) (break))
 
                   (nextToken)
 
