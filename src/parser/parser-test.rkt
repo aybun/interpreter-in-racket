@@ -239,10 +239,6 @@
               (printf "in TestParseInfixExpressions:\n")
               (printf "i : ~a\n" i)
               (printf "input : ~a\n" input)
-              ;; (printf "first : ~a second : ~a third : ~a\n"
-              ;;         (send (first stmts) TokenLiteral)
-              ;;         (send (second stmts) TokenLiteral)
-              ;;         (send (third stmts) TokenLiteral))
 
               (define stmt (first stmts))
               (check-equal? (is-a? stmt ast.ExpressionStatement) true)
@@ -252,6 +248,132 @@
     )
   )
 ); :: END TestParsingInfixExpressions
+
+
+(define (TestOperatorPrecedenceParsing)
+  (define tests (list
+                      '(
+                        "-a * b"
+                        "((-a) * b)"
+                        )
+                      '(
+                        "!-a"
+                        "(!(-a))"
+                        )
+                      '(
+                        "a + b + c"
+                        "((a + b) + c)"
+                        )
+                      '(
+                        "a + b - c"
+                        "((a + b) - c)"
+                        )
+                      '(
+                        "a * b * c"
+                        "((a * b) * c)"
+                        )
+                      '(
+                        "a * b / c"
+                        "((a * b) / c)"
+                        )
+                      '(
+                        "a + b / c"
+                        "(a + (b / c))"
+                        )
+                      '(
+                        "a + b * c + d / e - f"
+                        "(((a + (b * c)) + (d / e)) - f)"
+                        )
+                      '(
+                        "3 + 4; -5 * 5"
+                        "(3 + 4)((-5) * 5)"
+                        )
+                      '(
+                        "5 > 4 == 3 < 4"
+                        "((5 > 4) == (3 < 4))"
+                        )
+                      '(
+                        "5 < 4 != 3 > 4"
+                        "((5 < 4) != (3 > 4))"
+                        )
+                      '(
+                        "3 + 4 * 5 == 3 * 1 + 4 * 5"
+                        "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"
+                        )
+                      '(
+                        "true"
+                        "true"
+                        )
+                      '(
+                        "false"
+                        "false"
+                        )
+                      '(
+                        "3 > 5 == false"
+                        "((3 > 5) == false)"
+                        )
+                      '(
+                        "3 < 5 == true"
+                        "((3 < 5) == true)"
+                        )
+                      '(
+                        "1 + (2 + 3) + 4"
+                        "((1 + (2 + 3)) + 4)"
+                        )
+                      '(
+                        "(5 + 5) * 2"
+                        "((5 + 5) * 2)"
+                        )
+                      '(
+                        "2 / (5 + 5)"
+                        "(2 / (5 + 5))"
+                        )
+                      '(
+                        "(5 + 5) * 2 * (5 + 5)"
+                        "(((5 + 5) * 2) * (5 + 5))"
+                        )
+                      '(
+                        "-(5 + 5)"
+                        "(-(5 + 5))"
+                        )
+                      '(
+                        "!(true == true)"
+                        "(!(true == true))"
+                        )
+                      '(
+                        "a + add(b * c) + d"
+                        "((a + add((b * c))) + d)"
+                        )
+                      '(
+                        "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))"
+                        "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))"
+                        )
+                      '(
+                        "add(a + b + c * d / f + g)"
+                        "add((((a + b) + ((c * d) / f)) + g))"
+                        )
+                 )); END tests
+
+  (for/list ([tt tests]
+             [i (in-naturals 1)]) ;1, 2, 3, ...
+            (begin
+              (define input  (first  tt))
+              (define expected (second tt))
+
+              (define l (lexer.New input))
+              (define p (parser.New l))
+              (define program (send p ParseProgram ))
+              (checkParserErrors p)
+
+              (define actual (send program String))
+
+              (check-equal? actual expected)
+
+            )
+  )
+)
+; :: Start helper functions
+
 
 (define (testLetStatement statement name)
   (check-equal? (send statement TokenLiteral) "let" "CHECK Literal=='let'")
@@ -321,3 +443,4 @@
 (TestIntegerLiteralExpression)
 (TestParsingPrefixExpressions)
 (TestParsingInfixExpressions)
+(TestOperatorPrecedenceParsing)

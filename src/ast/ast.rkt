@@ -196,7 +196,7 @@
                                 (string-append (TokenLiteral)
                                                 "("
                                                 joined-strings
-                                                ") "
+                                                ")"
                                                 (send Body String))
 
                                ))
@@ -218,7 +218,7 @@
                                 (string-append (send Function String)
                                                 "("
                                                 joined-strings
-                                                ") "
+                                                ")"
                                                 )
 
 
