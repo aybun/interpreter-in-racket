@@ -1,6 +1,7 @@
 #lang racket
 
 (require rackunit)
+
 (require (prefix-in token. "../token/token.rkt"))
 (require (prefix-in lexer. "../lexer/lexer.rkt"))
 (require (prefix-in ast.   "../ast/ast.rkt"))
@@ -13,25 +14,21 @@
 ;; Fast Code Navigation
 
 
-(define-syntax-rule (get obj field)
-  (get-field field obj)
-)
-;; Rewrite when ready.
-(define-syntax-rule (get-nested-2 obj f1 f2)
-  (get-field f2 (get-field f1 obj))
-)
+(define-syntax get
+  (syntax-rules ()
+    [(get obj f)
+     (get-field f obj)]
+    [(get obj f1 f2 ...)
+     (get (get-field f1 obj) f2 ...)]))
 
-
-;; (define-syntax-rule (:: str) Define Comment Symbol
-;; )
 
 (define (TestLetStatements)
   (define tests (list
-      (list "let x = 5;" "x" 5)
-      (list "let y = true;" "y" #t)
-      (list "let foobar = y;" "foobar" "y")
-    )
-  )
+                 (list "let x = 5;" "x" 5)
+                 (list "let y = true;" "y" #t)
+                 (list "let foobar = y;" "foobar" "y")))
+
+
 
   (for/list ([tt tests]
              [i (in-naturals)]) ;0, 1, 2, ...
@@ -44,7 +41,7 @@
 
               (define l (lexer.New input))
               (define p (parser.New l))
-              (define program (send p ParseProgram ))
+              (define program (send p ParseProgram))
 
               (checkParserErrors p)
 
@@ -53,21 +50,21 @@
 
               (define stmt (first stmts))
               (testLetStatement stmt      expectedIdentifier)
-              (testLiteralExpression (get stmt Value) expectedValue)
+              (testLiteralExpression (get stmt Value) expectedValue))))
 
-            );; ::END BEGIN
-  );; :: END FOR
+            ;; ::END BEGIN
+  ;; :: END FOR
 
-) ;; END TestLetStatement
+ ;; END TestLetStatement
 
 
 (define (TestReturnStatements)
   (define tests (list
-                  (list "return 5;"  5 )
-                  (list "return true;" true )
+                  (list "return 5;"  5)
+                  (list "return true;" true)
                   (list "return foobar;" "foobar")))
 
-  (for/list ([tt tests ]
+  (for/list ([tt tests]
              [i (in-naturals)]) ; 0, 1, 2, ...
     (begin
               (define input              (first  tt))
@@ -76,7 +73,7 @@
 
               (define l (lexer.New input))
               (define p (parser.New l))
-              (define program (send p ParseProgram ))
+              (define program (send p ParseProgram))
               (checkParserErrors p)
 
 
@@ -85,27 +82,27 @@
 
               (define stmt (first stmts))
               (check-equal? (is-a? stmt ast.ReturnStatement) true)
-              (testLiteralExpression (get stmt ReturnValue) expectedValue)
+              (testLiteralExpression (get stmt ReturnValue) expectedValue))))
 
-    )
 
-  ); :: END FOR
 
-); :: END TestReutnrStatements
+  ; :: END FOR
+
+; :: END TestReutnrStatements
 
 (define (TestIdentifierExpression)
 
   (define tests (list
                   (list "foobar;")))
 
-  (for/list ([tt tests ]
+  (for/list ([tt tests]
              [i (in-naturals)]) ; 0, 1, 2, ...
     (begin
               (define input  (first  tt))
 
               (define l (lexer.New input))
               (define p (parser.New l))
-              (define program (send p ParseProgram ))
+              (define program (send p ParseProgram))
               (checkParserErrors p)
 
 
@@ -118,24 +115,24 @@
               (define ident (get stmt Expression))
               (check-equal? (is-a? ident ast.Identifier) true)
               (check-equal? (get ident Value) "foobar")
-              (check-equal? (send ident TokenLiteral) "foobar")
-    )
-  )
-); :: END TestIdentifierExpression
+              (check-equal? (send ident TokenLiteral) "foobar"))))
+
+
+; :: END TestIdentifierExpression
 
 (define (TestIntegerLiteralExpression)
 
   (define tests (list
                   (list "5;")))
 
-  (for/list ([tt tests ]
+  (for/list ([tt tests]
              [i (in-naturals)]) ; 0, 1, 2, ...
     (begin
               (define input  (first  tt))
 
               (define l (lexer.New input))
               (define p (parser.New l))
-              (define program (send p ParseProgram ))
+              (define program (send p ParseProgram))
               (checkParserErrors p)
 
 
@@ -148,10 +145,10 @@
               (define literal (get stmt Expression))
               (check-equal? (is-a? literal ast.IntegerLiteral) true)
               (check-equal? (get literal Value) 5)
-              (check-equal? (send literal TokenLiteral) "5")
-    )
-  )
-); :: END TestIntegerLiteralExpression
+              (check-equal? (send literal TokenLiteral) "5"))))
+
+
+; :: END TestIntegerLiteralExpression
 
 
 (define (TestParsingPrefixExpressions)
@@ -165,7 +162,7 @@
                     (list "!false;" "!" false)))
 
 
-  (for/list ([tt tests ]
+  (for/list ([tt tests]
              [i (in-naturals)]) ; 0, 1, 2, ...
     (begin
               (define input  (first  tt))
@@ -175,7 +172,7 @@
 
               (define l (lexer.New input))
               (define p (parser.New l))
-              (define program (send p ParseProgram ))
+              (define program (send p ParseProgram))
               (checkParserErrors p)
 
 
@@ -189,10 +186,10 @@
               (check-equal? (is-a? expr ast.PrefixExpression) true)
               (check-equal? (get expr Operator) operator)
               (printf "in TestParsingPrefixExpression here\n")
-              (testLiteralExpression (get expr Right) value)
-    )
-  )
-); :: END TestParsingPrefixExpressions
+              (testLiteralExpression (get expr Right) value))))
+
+
+; :: END TestParsingPrefixExpressions
 
 (define (TestParsingInfixExpressions)
 
@@ -216,11 +213,11 @@
               (list "foobar != barfoo;"  "foobar"  "!="  "barfoo")
               (list "true == true"  true  "=="  true)
               (list "true != false"  true  "!="  false)
-              (list "false == false"  false  "=="  false))
-  )
+              (list "false == false"  false  "=="  false)))
 
 
-  (for/list ([tt tests ]
+
+  (for/list ([tt tests]
              [i (in-naturals)]) ; 0, 1, 2, ...
     (begin
               (define input  (first  tt))
@@ -230,7 +227,7 @@
 
               (define l (lexer.New input))
               (define p (parser.New l))
-              (define program (send p ParseProgram ))
+              (define program (send p ParseProgram))
               (checkParserErrors p)
 
               (define stmts (get program Statements))
@@ -243,116 +240,116 @@
               (define stmt (first stmts))
               (check-equal? (is-a? stmt ast.ExpressionStatement) true)
 
-              (testInfixExpression (get stmt Expression) leftValue operator rightValue)
+              (testInfixExpression (get stmt Expression) leftValue operator rightValue))))
 
-    )
-  )
-); :: END TestParsingInfixExpressions
+
+
+; :: END TestParsingInfixExpressions
 
 
 (define (TestOperatorPrecedenceParsing)
   (define tests (list
                       '(
                         "-a * b"
-                        "((-a) * b)"
-                        )
+                        "((-a) * b)")
+
                       '(
                         "!-a"
-                        "(!(-a))"
-                        )
+                        "(!(-a))")
+
                       '(
                         "a + b + c"
-                        "((a + b) + c)"
-                        )
+                        "((a + b) + c)")
+
                       '(
                         "a + b - c"
-                        "((a + b) - c)"
-                        )
+                        "((a + b) - c)")
+
                       '(
                         "a * b * c"
-                        "((a * b) * c)"
-                        )
+                        "((a * b) * c)")
+
                       '(
                         "a * b / c"
-                        "((a * b) / c)"
-                        )
+                        "((a * b) / c)")
+
                       '(
                         "a + b / c"
-                        "(a + (b / c))"
-                        )
+                        "(a + (b / c))")
+
                       '(
                         "a + b * c + d / e - f"
-                        "(((a + (b * c)) + (d / e)) - f)"
-                        )
+                        "(((a + (b * c)) + (d / e)) - f)")
+
                       '(
                         "3 + 4; -5 * 5"
-                        "(3 + 4)((-5) * 5)"
-                        )
+                        "(3 + 4)((-5) * 5)")
+
                       '(
                         "5 > 4 == 3 < 4"
-                        "((5 > 4) == (3 < 4))"
-                        )
+                        "((5 > 4) == (3 < 4))")
+
                       '(
                         "5 < 4 != 3 > 4"
-                        "((5 < 4) != (3 > 4))"
-                        )
+                        "((5 < 4) != (3 > 4))")
+
                       '(
                         "3 + 4 * 5 == 3 * 1 + 4 * 5"
-                        "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"
-                        )
+                        "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))")
+
                       '(
                         "true"
-                        "true"
-                        )
+                        "true")
+
                       '(
                         "false"
-                        "false"
-                        )
+                        "false")
+
                       '(
                         "3 > 5 == false"
-                        "((3 > 5) == false)"
-                        )
+                        "((3 > 5) == false)")
+
                       '(
                         "3 < 5 == true"
-                        "((3 < 5) == true)"
-                        )
+                        "((3 < 5) == true)")
+
                       '(
                         "1 + (2 + 3) + 4"
-                        "((1 + (2 + 3)) + 4)"
-                        )
+                        "((1 + (2 + 3)) + 4)")
+
                       '(
                         "(5 + 5) * 2"
-                        "((5 + 5) * 2)"
-                        )
+                        "((5 + 5) * 2)")
+
                       '(
                         "2 / (5 + 5)"
-                        "(2 / (5 + 5))"
-                        )
+                        "(2 / (5 + 5))")
+
                       '(
                         "(5 + 5) * 2 * (5 + 5)"
-                        "(((5 + 5) * 2) * (5 + 5))"
-                        )
+                        "(((5 + 5) * 2) * (5 + 5))")
+
                       '(
                         "-(5 + 5)"
-                        "(-(5 + 5))"
-                        )
+                        "(-(5 + 5))")
+
                       '(
                         "!(true == true)"
-                        "(!(true == true))"
-                        )
+                        "(!(true == true))")
+
                       '(
                         "a + add(b * c) + d"
-                        "((a + add((b * c))) + d)"
-                        )
+                        "((a + add((b * c))) + d)")
+
                       '(
                         "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))"
-                        "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))"
-                        )
+                        "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))")
+
                       '(
                         "add(a + b + c * d / f + g)"
-                        "add((((a + b) + ((c * d) / f)) + g))"
-                        )
-                 )); END tests
+                        "add((((a + b) + ((c * d) / f)) + g))")))
+
+                 ; END tests
 
   (for/list ([tt tests]
              [i (in-naturals 1)]) ;1, 2, 3, ...
@@ -362,16 +359,16 @@
 
               (define l (lexer.New input))
               (define p (parser.New l))
-              (define program (send p ParseProgram ))
+              (define program (send p ParseProgram))
               (checkParserErrors p)
 
               (define actual (send program String))
 
-              (check-equal? actual expected)
+              (check-equal? actual expected))))
 
-            )
-  )
-);; END TestOperatorPrecedenceParsing
+
+
+;; END TestOperatorPrecedenceParsing
 
 (define (TestBooleanExpression)
   (define tests (list (list "true;" #t) (list "false;" #f)))
@@ -384,7 +381,7 @@
 
               (define l (lexer.New input))
               (define p (parser.New l))
-              (define program (send p ParseProgram ))
+              (define program (send p ParseProgram))
               (checkParserErrors p)
 
               (define stmts (get program Statements))
@@ -396,52 +393,52 @@
               (define expr (get stmt Expression))
               (check-equal? (is-a? expr ast.Boolean) #t)
 
-              (check-equal? (get expr Value) expectedBoolean)
+              (check-equal? (get expr Value) expectedBoolean))))
 
 
-            )
-  )
-); END TestBooleanExpression
+
+
+; END TestBooleanExpression
 
 (define (TestIfExpression)
   (displayln "In TestIfExpression")
   (define tests (list (list "if (x < y) { x }")))
 
-    (for/list ([tt tests]
-               [i (in-naturals 1)]) ;1, 2, 3, ...
-            (begin
-              (define input  (first  tt))
+  (for/list ([tt tests]
+             [i (in-naturals 1)]) ;1, 2, 3, ...
+          (begin
+            (define input  (first  tt))
 
-              (define l (lexer.New input))
-              (define p (parser.New l))
-              (define program (send p ParseProgram ))
-              (checkParserErrors p)
+            (define l (lexer.New input))
+            (define p (parser.New l))
+            (define program (send p ParseProgram))
+            (checkParserErrors p)
 
 
-              (define stmts (get program Statements))
-              (check-equal? (length stmts) 1 "CHECK len(statements)")
+            (define stmts (get program Statements))
+            (check-equal? (length stmts) 1 "CHECK len(statements)")
 
-              (define stmt (first stmts))
-              (check-equal? (is-a? stmt ast.ExpressionStatement) #t)
+            (define stmt (first stmts))
+            (check-equal? (is-a? stmt ast.ExpressionStatement) #t)
 
-              (define expr (get stmt Expression))
-              (check-equal? (is-a? expr ast.IfExpression) #t)
+            (define expr (get stmt Expression))
+            (check-equal? (is-a? expr ast.IfExpression) #t)
 
-              (testInfixExpression (get expr Condition) "x" "<" "y")
+            (testInfixExpression (get expr Condition) "x" "<" "y")
 
-              (check-equal? (length (get-nested-2 expr Consequence Statements)) 1)
+            (check-equal? (length (get expr Consequence Statements)) 1)
 
-              (define consequence (first (get-nested-2 expr Consequence Statements)))
-              (check-equal? (is-a? consequence ast.ExpressionStatement) #t)
+            (define consequence (first (get expr Consequence Statements)))
+            (check-equal? (is-a? consequence ast.ExpressionStatement) #t)
 
-              (testIdentifier (get consequence Expression) "x")
+            (testIdentifier (get consequence Expression) "x")
 
-              (check-equal? (null? (get expr Alternative)) #t)
+            (check-equal? (null? (get expr Alternative)) #t))))
 
-            )
-  )
 
-); END TestIfExpression
+
+
+; END TestIfExpression
 
 
 (define (TestIfElseExpression)
@@ -455,7 +452,7 @@
 
       (define l (lexer.New input))
       (define p (parser.New l))
-      (define program (send p ParseProgram ))
+      (define program (send p ParseProgram))
       (checkParserErrors p)
 
       (define stmts (get program Statements))
@@ -469,22 +466,22 @@
 
       (testInfixExpression (get expr Condition) "x" "<" "y")
 
-      (check-equal? (length (get-nested-2 expr Consequence Statements)) 1)
+      (check-equal? (length (get expr Consequence Statements)) 1)
 
-      (define consequence (first (get-nested-2 expr Consequence Statements)))
+      (define consequence (first (get expr Consequence Statements)))
       (check-equal? (is-a? consequence ast.ExpressionStatement) #t)
 
       (testIdentifier (get consequence Expression) "x")
 
-      (check-equal? (length (get-nested-2 expr Alternative Statements)) 1)
+      (check-equal? (length (get expr Alternative Statements)) 1)
 
-      (define alternative (first (get-nested-2 expr Alternative Statements)))
+      (define alternative (first (get expr Alternative Statements)))
       (check-equal? (is-a? alternative ast.ExpressionStatement) #t)
-      (testIdentifier (get alternative Expression) "y")
-    )
-  )
+      (testIdentifier (get alternative Expression) "y"))))
 
-); :: END TestIfElseExpression
+
+
+; :: END TestIfElseExpression
 
 (define (TestFunctionLiteralParsing)
   (displayln "in TestFunctionLiteralParsing")
@@ -498,7 +495,7 @@
 
       (define l (lexer.New input))
       (define p (parser.New l))
-      (define program (send p ParseProgram ))
+      (define program (send p ParseProgram))
       (checkParserErrors p)
 
       (define stmts (get program Statements))
@@ -514,16 +511,16 @@
       (testLiteralExpression (first (get function Parameters)) "x")
       (testLiteralExpression (second (get function Parameters)) "y")
 
-      (check-equal? (length (get-nested-2 function Body Statements)) 1)
+      (check-equal? (length (get function Body Statements)) 1)
 
-      (define bodyStmt (first (get-nested-2 function Body Statements)))
+      (define bodyStmt (first (get function Body Statements)))
       (check-equal? (is-a? bodyStmt ast.ExpressionStatement) #t)
 
-      (testInfixExpression (get bodyStmt Expression) "x" "+" "y")
-    )
-  )
+      (testInfixExpression (get bodyStmt Expression) "x" "+" "y"))))
 
-) ; END TestFunctionLiteralParsing
+
+
+ ; END TestFunctionLiteralParsing
 
 
 (define (TestFunctionParameterParsing)
@@ -531,8 +528,8 @@
   (define tests    (list
                      (list "fn() {};" (list))
                      (list "fn(x) {};" (list "x"))
-                     (list "fn(x, y, z) {};" (list "x" "y" "z"))
-                     ))
+                     (list "fn(x, y, z) {};" (list "x" "y" "z"))))
+
 
   (for/list ([tt tests]
              [i (in-naturals 0)])
@@ -542,7 +539,7 @@
 
       (define l (lexer.New input))
       (define p (parser.New l))
-      (define program (send p ParseProgram ))
+      (define program (send p ParseProgram))
       (checkParserErrors p)
 
       (define stmts (get program Statements))
@@ -555,12 +552,12 @@
                  [ident expectedParams]
                  [actual (get function Parameters)])
         (begin
-          (testLiteralExpression actual ident)
-        )
-      )
-    )
-  )
-); :: END TestFunctionParameterParsing
+          (testLiteralExpression actual ident))))))
+
+
+
+
+; :: END TestFunctionParameterParsing
 
 
 (define (TestCallExpressionParsing)
@@ -575,7 +572,7 @@
 
       (define l (lexer.New input))
       (define p (parser.New l))
-      (define program (send p ParseProgram ))
+      (define program (send p ParseProgram))
       (checkParserErrors p)
 
       (define stmts (get program Statements))
@@ -595,30 +592,30 @@
 
       (testInfixExpression (second (get expr Arguments)) 2 "*" 3)
 
-      (testInfixExpression (third (get expr Arguments)) 4 "+" 5)
+      (testInfixExpression (third (get expr Arguments)) 4 "+" 5))))
 
-    )
-  )
-);; END TestCallExpressionParsing
+
+
+;; END TestCallExpressionParsing
 
 (define (TestCallExpressionParameterParsing)
   (define tests '(
                       (
                        "add();"
                        "add"
-                       ()
-                       )
+                       ())
+
                       (
                        "add(1);"
                        "add"
-                       ("1")
-                       )
+                       ("1"))
+
                       (
                        "add(1, 2 * 3, 4 + 5);"
                        "add"
-                       ("1"  "(2 * 3)"  "(4 + 5)")
-                       )
-                 ))
+                       ("1"  "(2 * 3)"  "(4 + 5)"))))
+
+
 
   (for/list ([tt tests]
              [i (in-naturals 0)])
@@ -629,7 +626,7 @@
 
       (define l (lexer.New input))
       (define p (parser.New l))
-      (define program (send p ParseProgram ))
+      (define program (send p ParseProgram))
       (checkParserErrors p)
 
       (define stmts (get program Statements))
@@ -646,14 +643,14 @@
 
       (for/list ([actual (get expr Arguments)]
                  [expected expectedArgs])
-        (check-equal? (send actual String) expected)
-      )
-
-    )
-  )
+        (check-equal? (send actual String) expected)))))
 
 
-); END  TestCallExpressionParameterParsing
+
+
+
+
+; END  TestCallExpressionParameterParsing
 
 
 
@@ -663,9 +660,9 @@
 (define (testLetStatement statement name)
   (check-equal? (send statement TokenLiteral) "let" "CHECK Literal=='let'")
   (check-equal? (is-a? statement ast.LetStatement) true "CHECK class")
-  (check-equal? (get-nested-2 statement Name Value) name "CHECK letStmt.Name.Value == name")
-  (check-equal? (send (get statement Name) TokenLiteral) name "CHECK letstmt.Name.TokenLiteral() == name")
-)
+  (check-equal? (get statement Name Value) name "CHECK letStmt.Name.Value == name")
+  (check-equal? (send (get statement Name) TokenLiteral) name "CHECK letstmt.Name.TokenLiteral() == name"))
+
 
 
 
@@ -680,9 +677,9 @@
     [(number? expected) (testIntegerLiteral expr expected)]
     [(string? expected) (testIdentifier expr expected)]
     [(boolean? expected) (testBooleanLiteral expr expected)]
-    [else (fail (format "type of exp not handle. given ~a\n" expected))]
-  )
-)
+    [else (fail (format "type of exp not handle. given ~a\n" expected))]))
+
+
 
 
 (define (testIntegerLiteral il value)
@@ -690,36 +687,36 @@
   (displayln il)
   (check-equal? (is-a? il ast.IntegerLiteral) true)
   (check-equal? (get il Value) value)
-  (check-equal? (send il TokenLiteral) (format "~a" value))
-)
+  (check-equal? (send il TokenLiteral) (format "~a" value)))
+
 
 (define (testIdentifier expr value)
   (check-equal? (is-a? expr ast.Identifier) true)
   (check-equal? (get expr Value) value)
-  (check-equal? (send expr TokenLiteral) value)
-)
+  (check-equal? (send expr TokenLiteral) value))
+
 
 (define (testBooleanLiteral expr value)
   (check-equal? (is-a? expr ast.Boolean) true)
   (check-equal? (get expr Value) value)
-  (check-equal? (send expr TokenLiteral) (cond [value "true"] [(not value) "false"]))
-)
+  (check-equal? (send expr TokenLiteral) (cond [value "true"] [(not value) "false"])))
+
 
 (define (checkParserErrors p)
   (define errors (send p Errors))
   (unless (empty? errors)
       (fail (format "parser has ~a errors \n parser error: ~a"
-                    (length errors)                      errors)
-      )
-  )
-)
+                    (length errors)                      errors))))
+
+
+
 
 (define (testInfixExpression expr left operator right)
   (check-equal? (is-a? expr ast.InfixExpression) true)
   (testLiteralExpression (get expr Left) left)
   (check-equal? (get expr Operator) operator)
-  (testLiteralExpression (get expr Right) right)
-)
+  (testLiteralExpression (get expr Right) right))
+
 
 ;; RUNNING TESTS
 (TestLetStatements)
