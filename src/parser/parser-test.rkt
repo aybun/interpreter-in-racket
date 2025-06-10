@@ -13,13 +13,13 @@
 ;; Code ToC similar to book ToC
 ;; Fast Code Navigation
 
-
+;; Write the general case when ready.
 (define-syntax get
   (syntax-rules ()
     [(get obj f)
      (get-field f obj)]
-    [(get obj f1 f2 ...)
-     (get (get-field f1 obj) f2 ...)]))
+    [(get obj f1 f2)
+     (get (get-field f1 obj) f2)]))
 
 
 (define (TestLetStatements)
