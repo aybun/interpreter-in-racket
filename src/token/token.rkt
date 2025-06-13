@@ -1,5 +1,4 @@
 #lang racket
-;(require racket/class)
 
 (provide (except-out (all-defined-out) define-mult-val))
 
@@ -67,11 +66,7 @@
                          ))
 
 (define (LookupIdent ident)
-  ;; (displayln "START: LookupIdent")
-  ;; (printf "ident: ~a\n" ident)
-  ;; (printf "len(ident): ~a\n" (string-length ident))
   (define tok (hash-ref keywords ident null))
-  ;; (printf "tok: ~a\n" tok)
   (if (null? tok)
     IDENT
     tok
