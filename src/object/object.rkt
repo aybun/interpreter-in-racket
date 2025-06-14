@@ -7,14 +7,14 @@
 (define ERROR_OBJ  "ERROR")
 (define INTEGER_OBJ  "INTEGER")
 (define BOOLEAN_OBJ  "BOOLEAN")
-(define  RETURN_VALUE_OBJ  "RETURN_VALUE")
+(define RETURN_VALUE_OBJ  "RETURN_VALUE")
 (define FUNCTION_OBJ  "FUNCTION")
 
 (define Object
   (class object%
     (super-new)
-    (define (Type) null)
-    (define (Inspect) null)))
+    (define/public (Type) null)
+    (define/public (Inspect) null)))
 
 (define Integer
   (class Object
