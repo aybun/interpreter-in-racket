@@ -2,6 +2,7 @@
 
 (require (prefix-in ast. "../ast/ast.rkt"))
 
+(provide (all-defined-out))
 
 (define NULL_OBJ   "NULL")
 (define ERROR_OBJ  "ERROR")
@@ -33,7 +34,6 @@
 (define Null
   (class Object
     (super-new)
-    (init-field Value)
     (define/override (Type) NULL_OBJ)
     (define/override (Inspect) "null")))
 

@@ -2,10 +2,13 @@
 
 (require threading) ; for ~>
 
+(provide NewEnclosedEnvironment NewEnvironment Environment)
+
+
 (define (NewEnclosedEnvironment outer)
-    (define env (NewEnvironment))
-    (~> env (set-field! outer _ outer))
-    env)
+  (define env (NewEnvironment))
+  (~> env (set-field! outer _ outer))
+  env)
 
 
 (define (NewEnvironment)
