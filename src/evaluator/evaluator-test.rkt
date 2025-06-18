@@ -35,12 +35,47 @@
 
     (define input (first tt))
     (define expected (second tt))
-    
+
     (printf "i: ~a\n" i)
     (printf "tt: ~a\n" tt)
 
     (define evaluated (testEval input))
     (testIntegerObject evaluated expected)))
+
+
+(define (TestBooleanExpression)
+  (define tests '(
+                  ("true" #t)
+                  ("false" #f)
+                  ("1 < 2" #t)
+                  ("1 > 2" #f)
+                  ("1 < 1" #f)
+                  ("1 > 1" #f)
+                  ("1 == 1" #t)
+                  ("1 != 1" #f)
+                  ("1 == 2" #f)
+                  ("1 != 2" #t)
+                  ("true == true" #t)
+                  ("false == false" #t)
+                  ("true == false" #f)
+                  ("true != false" #t)
+                  ("false != true" #t)
+                  ("(1 < 2) == true" #t)
+                  ("(1 < 2) == false" #f)
+                  ("(1 > 2) == true" #f)
+                  ("(1 > 2) == false" #t)))
+
+
+  (for/list ([tt tests]
+             [i (in-naturals 0)])
+    (define input (first tt))
+    (define expected (second tt))
+
+    (printf "i: ~a\n" i)
+    (printf "tt: ~a\n" tt)
+
+    (define evaluated (testEval input))
+    (testBooleanObject evaluated expected)))
 
 
 (define (testIntegerObject obj expected)
@@ -49,6 +84,10 @@
   ;; (printf "obj: ~a\nexpected: ~a\n" obj expected)
 
   (check-equal? (is-a? obj object.Integer) #t "is-a? object.Integer")
+  (check-equal? (get obj Value) expected) "obj.Value =? expected")
+
+(define (testBooleanObject obj expected)
+  (check-equal? (is-a? obj object.Boolean) #t) "is-a? object.Boolean"
   (check-equal? (get obj Value) expected) "obj.Value =? expected")
 
 
@@ -68,4 +107,5 @@
      (get (get-field f1 obj) f2)]))
 
 ; Test Calls
-(TestEvalIntegerExpression)
+;; (TestEvalIntegerExpression)
+(TestBooleanExpression)

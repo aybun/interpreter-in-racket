@@ -15,8 +15,8 @@
 (define (Eval node env)
    (printf "in Eval\n")
    (printf "node : ~a\n" node)
-   (printf "node is IntegerLiteral : ~a\n" (is-a? node ast.IntegerLiteral))
-   
+   (printf "node is Boolean : ~a\n" (is-a? node ast.Boolean))
+
    (cond
       [(is-a? node ast.Program ) (evalProgram node env)]
       [(is-a? node ast.BlockStatement) (evalBlockStatement node env)]
@@ -86,13 +86,14 @@
       (printf "i: ~a\n" i)
       (printf "result: ~a\n" result)
       (printf "is-a? object.ReturnValue: ~a\n" (is-a? result object.ReturnValue))
+      (printf "is-a? object.Error: ~a\n" (is-a? result object.Error))
       (cond
-          [(is-a? result object.ReturnValue) (begin
-                                                 (set! result (get result Value))
-                                                 (set! break-loop #t))]
-          [(is-a? result object.Error) (begin
-                                          (set! result result)
-                                          (set! break-loop #t))]))
+        [(is-a? result object.ReturnValue) (begin
+                                             (set! result (get result Value))
+                                             (set! break-loop #t))]
+        [(is-a? result object.Error) (begin
+                                       (set! result result)
+                                       (set! break-loop #t))]))
   (printf "before return in evalProgram\n")
   (printf "result : ~a\n" result)
   result)
@@ -112,9 +113,12 @@
   returnValue)
 
 (define (nativeBoolToBooleanObject input)
+  (printf "int nativeBoolToBooleanObject\n")
+  (printf "input: ~a\n" input)
+
   (if input
-    TRUE
-    FALSE))
+      TRUE
+      FALSE))
 
 
 (define (evalPrefixExpression operator right)
@@ -131,6 +135,9 @@
 
         [ (equal? operator "==")
           (nativeBoolToBooleanObject (equal? left right))]
+
+        [ (equal? operator "!=")
+          (nativeBoolToBooleanObject (not (equal? left right)))]
 
         [ (not (equal? (send left Type) (send right Type)))
           (newError "type mismatch: ~a ~a ~a" (send left Type) operator (send right Type))]
