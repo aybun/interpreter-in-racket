@@ -6,14 +6,14 @@
   (class object%
     (super-new)
 
-    (define/public (TokenLiteral) null )
-    (define/public (String) null )
+    (define/public (TokenLiteral) null)
+    (define/public (String) null)))
 
-    ))
+    
 
 (define Statement
   (class Node
-    (define/public (statementNode) null )
+    (define/public (statementNode) null)
 
     (super-new)))
 
@@ -21,10 +21,10 @@
   (class Node
 
     (super-new)
-    (define/public (expressionNode) null )
+    (define/public (expressionNode) null)))
 
-  )
-)
+
+
 
 (define Program
 
@@ -33,12 +33,12 @@
     (init-field Statements)
     (define/public (TokenLiteral) (if (> (length Statements ) 0)
                                       (send (first Statements) TokenLiteral)
-                                      ""
-                                   ))
-    (define/public (String) (string-append* (map (lambda (e) (send e String)) Statements)))
-  )
+                                      ""))
+                                   
+    (define/public (String) (string-append* (map (lambda (e) (send e String)) Statements)))))
+  
 
-)
+
 
 
 ;;Statements
@@ -53,11 +53,11 @@
                                 (send Name String)
                                 " = "
                                 (if (null? Value) "" (send Value String))
-                                ";"
-                               ))
-  )
+                                ";"))))
+                               
+  
 
-)
+
 
 (define ReturnStatement
   (class Statement
@@ -67,11 +67,11 @@
     (define/override (String) (string-append
                                 (TokenLiteral) " "
                                 (if (null? ReturnValue) "" (send ReturnValue String))
-                                ";"
-                               ))
-  )
+                                ";"))))
+                               
+  
 
-)
+
 
 
 (define ExpressionStatement
@@ -80,11 +80,11 @@
     (init-field Token Expression)
     (define/override (TokenLiteral) (get-field Literal Token))
     (define/override (String) (string-append
-                                (if (null? Expression) "" (send Expression String))
-                               ))
-  )
+                                (if (null? Expression) "" (send Expression String))))))
+                               
+  
 
-)
+
 
 
 (define BlockStatement
@@ -92,9 +92,9 @@
     (super-new)
     (init-field Token Statements)
     (define/override (TokenLiteral) (get-field Literal Token))
-    (define/override (String) (string-append*  (map (lambda (e) (send e String)) Statements)))
-  )
-)
+    (define/override (String) (string-append*  (map (lambda (e) (send e String)) Statements)))))
+  
+
 
 
 ;; Expressions
@@ -105,29 +105,29 @@
     (super-new)
     (init-field Token Value)
     (define/override (TokenLiteral) (get-field Literal Token))
-    (define/override (String) Value)
-  )
-)
+    (define/override (String) Value)))
+  
+
 
 (define Boolean
   (class Expression
     (super-new)
     (init-field Token Value)
     (define/override (TokenLiteral) (get-field Literal Token))
-    (define/override (String) (get-field Literal Token))
+    (define/override (String) (get-field Literal Token))))
 
-  )
-)
+
+
 
 (define IntegerLiteral
   (class Expression
     (super-new)
     (init-field Token Value)
     (define/override (TokenLiteral) (get-field Literal Token))
-    (define/override (String) (get-field Literal Token))
+    (define/override (String) (get-field Literal Token))))
 
-  )
-)
+
+
 
 (define PrefixExpression
   (class Expression
@@ -138,12 +138,12 @@
                                "("
                                Operator
                                (send Right String)
-                               ")"
+                               ")"))))
 
-                               ))
+                               
 
-  )
-)
+
+
 
 
 (define InfixExpression
@@ -156,12 +156,12 @@
                                (send Left String)
                                " " Operator " "
                                (send Right String)
-                               ")"
+                               ")"))))
 
-                               ))
+                               
 
-  )
-)
+
+
 
 (define IfExpression
   (class Expression
@@ -175,12 +175,12 @@
                                (send Consequence String)
                                ")"
 
-                               (when (null? Alternative) (string-append "else " (send Alternative String)))
+                               (when (null? Alternative) (string-append "else " (send Alternative String)))))))
 
-                               ))
+  
 
-  )
-)
+
+
 
 
 
@@ -194,15 +194,15 @@
                                 (define joined-strings (string-join params ", "))
 
                                 (string-append (TokenLiteral)
-                                                "("
-                                                joined-strings
-                                                ")"
-                                                (send Body String))
+                                               "("
+                                               joined-strings
+                                               ")"
+                                               (send Body String))))))
 
-                               ))
+  
 
-  )
-)
+
+
 
 
 
@@ -216,13 +216,13 @@
                                 (define joined-strings (string-join args ", "))
 
                                 (string-append (send Function String)
-                                                "("
-                                                joined-strings
-                                                ")"
-                                                )
+                                               "("
+                                               joined-strings
+                                               ")")))))
+                                                
 
 
-                               ))
+                               
 
-  )
-)
+  
+

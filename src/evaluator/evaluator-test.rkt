@@ -77,6 +77,28 @@
     (define evaluated (testEval input))
     (testBooleanObject evaluated expected)))
 
+(define (TestBangOperator)
+  (define tests '(  
+                  ("!true" #f)
+                  ("!false" #t)
+                  ("!5" #f)
+                  ("!!true" #t)
+                  ("!!false" #f)
+                  ("!!5" #t)))
+
+  (for/list ([tt tests]
+             [i (in-naturals 0)])
+    
+    (define input (first tt))
+    (define expected (second tt))
+
+    (define evaluated (testEval input))
+    (testBooleanObject evaluated expected)))
+                    
+
+                  
+
+                   
 
 (define (testIntegerObject obj expected)
   (printf "in testIntegerObject\n")
@@ -107,5 +129,6 @@
      (get (get-field f1 obj) f2)]))
 
 ; Test Calls
-;; (TestEvalIntegerExpression)
+(TestEvalIntegerExpression)
 (TestBooleanExpression)
+(TestBangOperator)
