@@ -113,7 +113,7 @@
   returnValue)
 
 (define (nativeBoolToBooleanObject input)
-  (printf "int nativeBoolToBooleanObject\n")
+  (printf "in nativeBoolToBooleanObject\n")
   (printf "input: ~a\n" input)
 
   (if input
@@ -174,16 +174,19 @@
         [else   (newError "unknown operator: ~a ~a ~a" (send left Type) operator (send right Type))]))
 
 (define (evalIfExpression ie env)
+    (printf "in evalIfExpression\n")
     (define returnValue null)
     (while #t (begin
                  (define condition (Eval (get ie Condition) env))
                  (when (isError condition) (set! returnValue condition) (break))
-
+                  
                  (set! returnValue (cond
-                                       [(isTruthy condition) (Eval (send ie Consequence) env)]
-                                       [(not (null? (get ie Alternative))) (Eval (send ie Alternative) env)]
+                                       [(isTruthy condition) (Eval (get ie Consequence) env)]
+                                       [(not (null? (get ie Alternative))) (Eval (get ie Alternative) env)]
                                        [else null]))
                  (break)))
+    (printf "before return\n")
+    (printf "returnValue: ~a\n" returnValue)
     returnValue)
 
 

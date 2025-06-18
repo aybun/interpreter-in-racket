@@ -95,10 +95,31 @@
     (define evaluated (testEval input))
     (testBooleanObject evaluated expected)))
                     
+(define (TestIfElseExpression)
+  (define tests '( 
+                    ("if (true) { 10 }" 10)
+                    ("if (false) { 10 }" ()) ;; null
+                    ("if (1) { 10 }" 10)
+                    ("if (1 < 2) { 10 }" 10)
+                    ("if (1 > 2) { 10 }" ()) ;; null 
+                    ("if (1 > 2) { 10 } else { 20 }" 20)
+                    ("if (1 < 2) { 10 } else { 20 }" 10)))
 
-                  
+  (for/list ([tt tests]
+             [i (in-naturals 0)])
 
-                   
+    (define input (first tt))
+    (define expected (second tt))
+
+    (printf "i: ~a\n" i)
+    (printf "tt: ~a\n" tt)
+  
+    (define evaluated (testEval input))
+    
+    (if (null? expected)
+      (testNullObject evaluated)
+      (testIntegerObject evaluated expected))))
+                    
 
 (define (testIntegerObject obj expected)
   (printf "in testIntegerObject\n")
@@ -112,6 +133,8 @@
   (check-equal? (is-a? obj object.Boolean) #t) "is-a? object.Boolean"
   (check-equal? (get obj Value) expected) "obj.Value =? expected")
 
+(define (testNullObject obj)
+  (check-equal? (null? obj) #t) "null? obj")
 
 (define (testEval input)
   (define l (lexer.New input))
@@ -132,3 +155,4 @@
 (TestEvalIntegerExpression)
 (TestBooleanExpression)
 (TestBangOperator)
+(TestIfElseExpression)
