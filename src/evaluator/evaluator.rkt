@@ -15,7 +15,9 @@
 (define (Eval node env)
    (printf "in Eval\n")
    (printf "node : ~a\n" node)
-   (printf "node is Boolean : ~a\n" (is-a? node ast.Boolean))
+   (printf "node is ReturnStatement : ~a\n" (is-a? node ast.ReturnStatement))
+   (printf "node is FunctionLiteral : ~a\n" (is-a? node ast.FunctionLiteral))
+   (printf "node is Identifier : ~a\n" (is-a? node ast.Identifier))
 
    (cond
       [(is-a? node ast.Program ) (evalProgram node env)]
@@ -27,7 +29,7 @@
                                                val
                                                (new object.ReturnValue [Value val])))]
       [(is-a? node ast.LetStatement) (begin
-                                         (define val (get node Value))
+                                         (define val (Eval (get node Value) env))
                                          (if (isError val)
                                              val
                                              (begin
@@ -54,8 +56,8 @@
                                                 (break)))
                                            returnValue)]
       [(is-a? node ast.IfExpression) (evalIfExpression node env)]
-      [(is-a? node ast.Identifier (evalIdentifier node env))]
-      [(is-a? node ast.FunctionLiteral (new object.Function [Parameters (get node Paramenters)] [Env env] [Body (get node Body)]))]
+      [(is-a? node ast.Identifier) (evalIdentifier node env)]
+      [(is-a? node ast.FunctionLiteral) (new object.Function [Parameters (get node Parameters)] [Env env] [Body (get node Body)])]
       [(is-a? node ast.CallExpression) (begin
                                          (define returnValue null)
                                          (while #t
@@ -83,10 +85,12 @@
              [i (in-naturals 0)]
              #:break break-loop)
       (set! result (Eval statement env))
+      (printf "in loop of evalProgram\n")
       (printf "i: ~a\n" i)
       (printf "result: ~a\n" result)
       (printf "is-a? object.ReturnValue: ~a\n" (is-a? result object.ReturnValue))
       (printf "is-a? object.Error: ~a\n" (is-a? result object.Error))
+
       (cond
         [(is-a? result object.ReturnValue) (begin
                                              (set! result (get result Value))
@@ -100,17 +104,17 @@
 
 
 (define (evalBlockStatement block env)
-  (define returnValue null)
+  (define result null)
   (define break-loop #f)
-  (for/list ([statement (get block Statements)])
-      (set! returnValue (Eval statement env))
-      (when (not (null? returnValue))
-          (begin
-              (define rt (send returnValue Type))
-              (when (or (equal? rt object.RETURN_VALUE_OBJ) (equal? rt object.ERROR_OBJ))
-                  (set! break-loop #t)))))
+  (for/list ([statement (get block Statements)]
+             #:break break-loop)
+      (set! result (Eval statement env))
+      (when (not (null? result))
+            (define rt (send result Type))
+            (when (or (equal? rt object.RETURN_VALUE_OBJ) (equal? rt object.ERROR_OBJ))
+                (set! break-loop #t))))
 
-  returnValue)
+  result)
 
 (define (nativeBoolToBooleanObject input)
   (printf "in nativeBoolToBooleanObject\n")
@@ -194,10 +198,12 @@
     (define returnedList (send env Get (get node Value)))
     (define val (first returnedList))
     (define ok  (second returnedList))
-
+    
     (if (not ok)
-        (newError (format "identifier not found: ~a" (get node Value)))
-        (val)))
+        (begin
+           (printf "node.Value ~a\n" (get node Value))
+           (newError (format "identifier not found: ~a" (get node Value))))
+        val))
 
 
 (define (isTruthy obj)
@@ -222,7 +228,7 @@
     (define break-loop #f)
     (define evaluated null)
     (for/list ([e exps]
-               #:break (break-loop))
+               #:break break-loop)
         (begin
             (set! evaluated (Eval e env))
             (if (isError evaluated)
@@ -232,10 +238,21 @@
     returnValue)
 
 (define (applyFunction fn args)
+    (define returnValue null)
+    (while #t (begin
+                  (when (not (is-a? fn object.Function))
+                        (set! returnValue (newError "not a function: ~a" (send fn Type)))
+                        (break))
+                  (define extendedEnv (extendFunctionEnv fn args))
+                  (define evaluated (Eval (get fn Body) extendedEnv))
+                  (set! returnValue (unwrapReturnValue evaluated))
+                  (break)))
+    returnValue)
+(define (extendFunctionEnv fn args)
     (define env (object.NewEnclosedEnvironment (get fn Env)))
 
     (for/list ( [i (in-naturals 0)]
-                [param (get fn Paramenters)])
+                [param (get fn Parameters)])
         (send env Set (get param Value) (list-ref args i)))
 
     env)

@@ -95,7 +95,7 @@
     (define evaluated (testEval input))
     (testBooleanObject evaluated expected)))
                     
-(define (TestIfElseExpression)
+(define (TestIfElseExpressions)
   (define tests '( 
                     ("if (true) { 10 }" 10)
                     ("if (false) { 10 }" ()) ;; null
@@ -120,6 +120,50 @@
       (testNullObject evaluated)
       (testIntegerObject evaluated expected))))
                     
+(define (TestReturnStatements)
+
+  (define tests '( 
+                  ("return 10;" 10)
+                  ("return 10; 9;" 10)
+                  ("return 2 * 5; 9;" 10)
+                  ("9; return 2 * 5; 9;" 10)
+                  ("if (10 > 1) { return 10; }" 10)
+                  ("if (10 > 1) {
+                    if (10 > 1) {
+                      return 10;
+                    }
+
+                    return 1;
+                    }"
+                               10)
+    
+                  ("let f = fn(x) {
+                    return x;
+                    x + 10;
+                    };
+                    f(10);"
+                               10)
+    
+                  ("	let f = fn(x) {
+                    let result = x + 10;
+                    return result;
+                    return 10;
+                    };
+                    f(10);"
+                               20)))
+
+  (for/list ([tt tests]
+             [i (in-naturals 0)])
+      (define input (first tt))
+      (define expected (second tt))
+      
+      (printf "i: ~a\n" i)
+      (printf "tt: ~a\n" tt)
+
+      (define evaluated (testEval input))
+      (testIntegerObject evaluated expected)))
+      
+
 
 (define (testIntegerObject obj expected)
   (printf "in testIntegerObject\n")
@@ -143,7 +187,7 @@
   (define env (object.NewEnvironment))
   (evaluator.Eval program env))
 
-; Helper Zone
+; local macros
 (define-syntax get
   (syntax-rules ()
     [(get obj f)
@@ -155,4 +199,6 @@
 (TestEvalIntegerExpression)
 (TestBooleanExpression)
 (TestBangOperator)
-(TestIfElseExpression)
+(TestIfElseExpressions)
+(TestReturnStatements)
+
