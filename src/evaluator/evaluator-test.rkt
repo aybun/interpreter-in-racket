@@ -163,7 +163,67 @@
       (define evaluated (testEval input))
       (testIntegerObject evaluated expected)))
       
+(define (TestErrorHandling)
+  (define tests '( 
+                      (
+                       "5 + true;"
+                       "type mismatch: INTEGER + BOOLEAN")
+      
+                      (
+                       "5 + true; 5;"
+                       "type mismatch: INTEGER + BOOLEAN")
+      
+                      (
+                       "-true"
+                       "unknown operator: -BOOLEAN")
+      
+                      (
+                       "true + false;"
+                       "unknown operator: BOOLEAN + BOOLEAN")
+      
+                      (
+                       "true + false + true + false;"
+                       "unknown operator: BOOLEAN + BOOLEAN")
+      
+                      (
+                       "5; true + false; 5"
+                       "unknown operator: BOOLEAN + BOOLEAN")
+      
+                      (
+                       "if (10 > 1) { true + false; }"
+                       "unknown operator: BOOLEAN + BOOLEAN")
+      
+                      (
+                       "
+                      if (10 > 1) {
+                      if (10 > 1) {
+                          return true + false;
+                      }
 
+                      return 1;
+                      }
+                      "
+                       "unknown operator: BOOLEAN + BOOLEAN")
+      
+                      (
+                       "foobar"
+                       "identifier not found: foobar")))
+    
+  (for/list ([tt tests]
+             [i (in-naturals 0)])                    
+    (define input (first tt))
+    (define expectedMessage (second tt))
+    
+    (define evaluated (testEval input))
+
+    (check-equal? (is-a? evaluated object.Error) #t "is-a? object.Error")
+    (check-equal? (get evaluated Message) expectedMessage)))
+
+
+
+                   
+                    
+                    
 
 (define (testIntegerObject obj expected)
   (printf "in testIntegerObject\n")
@@ -201,4 +261,4 @@
 (TestBangOperator)
 (TestIfElseExpressions)
 (TestReturnStatements)
-
+(TestErrorHandling)
