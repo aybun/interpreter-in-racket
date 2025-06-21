@@ -219,12 +219,72 @@
     (check-equal? (is-a? evaluated object.Error) #t "is-a? object.Error")
     (check-equal? (get evaluated Message) expectedMessage)))
 
+(define (TestLetStatements)
+  (define tests '( 
+                    ("let a = 5; a;" 5)
+                    ("let a = 5 * 5; a;" 25)
+                    ("let a = 5; let b = a; b;" 5)
+                    ("let a = 5; let b = a; let c = a + b + 5; c;" 15)))
+
+  (for/list ([tt tests]
+             [i (in-naturals 0)])
+    
+    (define input (first tt))
+    (define expected (second tt))
+    (testIntegerObject (testEval input) expected)))                 
+
+                    
+(define (TestFunctionObject)
+  (define input "fn(x) { x + 2; };")
+  (define expectedBody "(x + 2)")
+  
+  (define evaluated (testEval input))
+
+  (check-equal? (is-a? evaluated object.Function) #t "is-a? object.Function")
+
+  (define params (get evaluated Parameters))
+  (check-equal? (length params) 1)
+  (check-equal? (send (first params) String) "x"))
 
 
+(define (TestFunctionApplication)
+  (define tests '( 
+                    ("let identity = fn(x) { x; }; identity(5);" 5)
+                    ("let identity = fn(x) { return x; }; identity(5);" 5)
+                    ("let double = fn(x) { x * 2; }; double(5);" 10)
+                    ("let add = fn(x, y) { x + y; }; add(5, 5);" 10)
+                    ("let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));" 20)
+                    ("fn(x) { x; }(5)" 5))) 
+
+  (for/list ([tt tests]
+             [i (in-naturals 0)])
+    
+    (define input (first tt))
+    (define expected (second tt))
+
+    (testIntegerObject (testEval input) expected)))
                    
-                    
-                    
 
+(define (TestEnclosingEnvironments)
+
+  (define input "
+
+      let first = 10;
+      let second = 10;
+      let third = 10;
+
+      let ourFunction = fn(first) {
+        let second = 20;
+
+        first + second + third;
+      };
+
+      ourFunction(20) + first + second;
+
+    ")
+
+  (testIntegerObject (testEval input) 70))
+                     
 (define (testIntegerObject obj expected)
   (printf "in testIntegerObject\n")
   ;; (printf "obj: ~a, obj.Value: ~a\n" obj (get obj Value))
@@ -262,3 +322,7 @@
 (TestIfElseExpressions)
 (TestReturnStatements)
 (TestErrorHandling)
+(TestLetStatements)
+(TestFunctionObject)
+(TestFunctionApplication)
+(TestEnclosingEnvironments)
