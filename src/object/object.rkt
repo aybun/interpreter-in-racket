@@ -8,8 +8,14 @@
 (define ERROR_OBJ  "ERROR")
 (define INTEGER_OBJ  "INTEGER")
 (define BOOLEAN_OBJ  "BOOLEAN")
+(define STRING_OBJ "STRING")
 (define RETURN_VALUE_OBJ  "RETURN_VALUE")
 (define FUNCTION_OBJ  "FUNCTION")
+(define BUILTIN_OBJ "BUILTIN")
+(define ARRAY_OBJ "ARRAY")
+(define HASH_OBJ "HASH")
+
+(struct HashKey (Type Value) #:transparent #:constructor-name -hash-key)
 
 (define Object
   (class object%
@@ -22,14 +28,22 @@
     (super-new)
     (init-field Value)
     (define/override (Type) INTEGER_OBJ)
-    (define/override (Inspect) (format "~a" Value))))
+    (define/override (Inspect) (format "~a" Value))
+    (define/public (HashKey)
+      (-hash-key (Type) Value))))
 
 (define Boolean
   (class Object
     (super-new)
     (init-field Value)
     (define/override (Type) BOOLEAN_OBJ)
-    (define/override (Inspect) (format "~a" Value))))
+    (define/override (Inspect) (format "~a" Value))
+    (define/public (HashKey)
+      (-hash-key (Type) (cond
+                             [Value 1]
+                             [else  0])))))
+
+
 
 (define Null
   (class Object
@@ -68,3 +82,62 @@
                                    ") {\n"
                                    (send Body String)
                                    "\n}")))))
+
+(define String
+  (class Object
+    (super-new)
+    (init-field Value)
+    (define/override (Type) STRING_OBJ)
+    (define/override (Inspect) Value)
+    (define/public (HashKey) (-hash-key (Type) (equal-hash-code Value)))))
+   
+(define Builtin
+  (class Object
+    (super-new)
+    (init-field Fn)
+    (define/override (Type) BUILTIN_OBJ)
+    (define/override (Inspect) "builtin function")))
+
+
+(define Array
+  (class Object
+    (super-new)
+    (init-field Elements)
+    (define/override (Type) ARRAY_OBJ)
+    (define/override (Inspect)
+      (define elements (map (lambda (e) (send e Inspect)) Elements))
+      (string-append
+        "["
+        (string-join elements ", ")
+        "]"))))
+        
+
+(define HashPair
+  (class object%
+    (super-new)
+    (init-field Key Value)))
+
+(define Hash
+  (class Object
+    (super-new)
+    (init-field Pairs)
+    (define/override (Type) HASH_OBJ)
+    (define/override (Inspect)
+      (define pairs (map (lambda (e)
+                           (format "~a: ~a" (send (get e Key) Inspect) (send (get e Value) Inspect)))))
+      (string-append
+        "{"
+        (string-join pairs ", ")
+        "}"))))
+
+
+
+; Macros
+(define-syntax get
+  (syntax-rules ()
+    [(get obj f)
+     (get-field f obj)]
+    [(get obj f1 f2)
+     (get (get-field f1 obj) f2)]))
+
+
