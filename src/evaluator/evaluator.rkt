@@ -138,6 +138,10 @@
                (equal? (send right Type) object.INTEGER_OBJ))
           (evalIntegerInfixExpression operator left right)]
 
+        [ (and (equal? (send left Type) object.STRING_OBJ)
+               (equal? (send right Type) object.STRING_OBJ))
+          (evalStringInfixExpression operator left right)]
+
         [ (equal? operator "==")
           (nativeBoolToBooleanObject (equal? left right))]
 
@@ -178,28 +182,32 @@
         [("!=") (nativeBoolToBooleanObject (not (equal? leftVal rightVal)))]
         [else   (newError "unknown operator: ~a ~a ~a" (send left Type) operator (send right Type))]))
 
+(define (evalStringInfixExpression operator left right)
+  (if (not (equal? operator "+"))
+    (newError "unknown operator: ~a ~a ~a" (send left Type) operator (send right Type))
+    (new object.String [Value (string-append (get left Value) (get right Value))])))
 (define (evalIfExpression ie env)
-    (printf "in evalIfExpression\n")
-    (define returnValue null)
-    (while #t (begin
-                 (define condition (Eval (get ie Condition) env))
-                 (when (isError condition) (set! returnValue condition) (break))
-                  
-                 (set! returnValue (cond
-                                       [(isTruthy condition) (Eval (get ie Consequence) env)]
-                                       [(not (null? (get ie Alternative))) (Eval (get ie Alternative) env)]
-                                       [else null]))
-                 (break)))
-    (printf "before return\n")
-    (printf "returnValue: ~a\n" returnValue)
-    returnValue)
+  (printf "in evalIfExpression\n")
+  (define returnValue null)
+  (while #t (begin
+              (define condition (Eval (get ie Condition) env))
+              (when (isError condition) (set! returnValue condition) (break))
+
+              (set! returnValue (cond
+                                  [(isTruthy condition) (Eval (get ie Consequence) env)]
+                                  [(not (null? (get ie Alternative))) (Eval (get ie Alternative) env)]
+                                  [else null]))
+              (break)))
+  (printf "before return\n")
+  (printf "returnValue: ~a\n" returnValue)
+  returnValue)
 
 
 (define (evalIdentifier node env)
     (define returnedList (send env Get (get node Value)))
     (define val (first returnedList))
     (define ok  (second returnedList))
-    
+
     (if (not ok)
         (begin
            (printf "node.Value ~a\n" (get node Value))
@@ -222,7 +230,7 @@
 (define (isError obj)
     (if (not (null? obj))
         (equal? (send obj Type) object.ERROR_OBJ)
-        (#f)))
+        #f))
 
 (define (evalExpressions exps env)
     (define returnValue (list))
