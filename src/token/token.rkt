@@ -10,44 +10,44 @@
 
 (define-mult-val
   (ILLEGAL "ILLEGAL")
-	(EOF     "EOF")
+  (EOF     "EOF")
 
-	; Identifiers + literals
-	(IDENT "IDENT") ;add, foobar, x, y, ...
-	(INT   "INT")   ;1343456
+  ; Identifiers + literals
+  (IDENT "IDENT") ;add, foobar, x, y, ...
+  (INT   "INT")   ;1343456
 
-	;Operators
-	(ASSIGN    "=")
-	(PLUS      "+")
-	(MINUS     "-")
-	(BANG      "!")
-	(ASTERISK  "*")
-	(SLASH     "/")
+  ;Operators
+  (ASSIGN    "=")
+  (PLUS      "+")
+  (MINUS     "-")
+  (BANG      "!")
+  (ASTERISK  "*")
+  (SLASH     "/")
 
-	(LT "<")
-	(GT ">")
+  (LT "<")
+  (GT ">")
 
-	(EQ     "==")
-	(NOT_EQ "!=")
+  (EQ     "==")
+  (NOT_EQ "!=")
 
-	;Delimiters
-	(COMMA     ",")
-	(SEMICOLON ";")
+  ;Delimiters
+  (COMMA     ",")
+  (SEMICOLON ";")
 
-	(LPAREN "(")
-	(RPAREN ")")
-	(LBRACE "{")
-	(RBRACE "}")
+  (LPAREN "(")
+  (RPAREN ")")
+  (LBRACE "{")
+  (RBRACE "}")
 
-	;Keywords
-	(FUNCTION "FUNCTION")
-	(LET      "LET")
-	(TRUE     "TRUE")
-	(FALSE    "FALSE")
-	(IF       "IF")
-	(ELSE     "ELSE")
-	(RETURN   "RETURN")
-)
+  ;Keywords
+  (FUNCTION "FUNCTION")
+  (LET      "LET")
+  (TRUE     "TRUE")
+  (FALSE    "FALSE")
+  (IF       "IF")
+  (ELSE     "ELSE")
+  (RETURN   "RETURN"))
+
 
 
 (define Token
@@ -62,13 +62,13 @@
                         "false"  FALSE
                         "if"     IF
                         "else"   ELSE
-                        "return" RETURN
-                         ))
+                        "return" RETURN))
+                         
 
 (define (LookupIdent ident)
   (define tok (hash-ref keywords ident null))
   (if (null? tok)
     IDENT
-    tok
-  )
-)
+    tok))
+  
+
