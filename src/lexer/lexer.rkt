@@ -42,18 +42,19 @@
             (while (isLetter ch) (readChar))
             (substring input start position)))
 
-
-        ;; )
-
-
-
     (define/private (readNumber)
-        ;; (
-          (local [(define start position)]
-            (while (isDigit ch) (readChar))
-            (substring input start position)))
-
-        ;; )
+      (local [(define start position)]
+        (while (isDigit ch) (readChar))
+        (substring input start position)))
+    
+    (define/private (readString)
+      (define start (+ position 1))
+      (while #t (begin
+                  (readChar)
+                  (when (or (equal? ch #\") (equal? ch #\null)) 
+                    (break))))
+      (substring input start position))
+      
 
 
 
@@ -120,6 +121,15 @@
              [
               (#\)) (newToken token.RPAREN ch)]
 
+             [ 
+              (#\") (newToken token.STRING (readString))]
+
+             [
+              (#\[) (newToken token.LBRACKET ch)]
+
+             [ 
+              (#\]) (newToken token.RBRACKET ch)]
+
              [
               (#\null) (newToken token.EOF "")]
 
@@ -156,6 +166,7 @@
 
    (define/private (initialize)
      (readChar))
+      
    (initialize))) ;; END Lexer
 
 

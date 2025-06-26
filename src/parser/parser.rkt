@@ -19,16 +19,16 @@
 
 
 (define precedences (hash
-    token.EQ       EQUALS
-    token.NOT_EQ   EQUALS
-    token.LT       LESSGREATER
-    token.GT       LESSGREATER
-    token.PLUS     SUM
-    token.MINUS    SUM
-    token.SLASH    PRODUCT
-    token.ASTERISK PRODUCT
-    token.LPAREN   CALL
-                         ))
+                     token.EQ       EQUALS
+                     token.NOT_EQ   EQUALS
+                     token.LT       LESSGREATER
+                     token.GT       LESSGREATER
+                     token.PLUS     SUM
+                     token.MINUS    SUM
+                     token.SLASH    PRODUCT
+                     token.ASTERISK PRODUCT
+                     token.LPAREN   CALL))
+
 (define Parser
   (class object%
     (field [errors '()] [curToken null] [peekToken null] [prefixParseFns null] [infixParseFns null])
@@ -40,14 +40,15 @@
         (set! prefixParseFns (hash
                                 token.IDENT    'parseIdentifier
                                 token.INT      'parseIntegerLiteral
+                                token.STRING   'parseStringLiteral
                                 token.BANG     'parsePrefixExpression
                                 token.MINUS    'parsePrefixExpression
                                 token.TRUE     'parseBoolean
                                 token.FALSE    'parseBoolean
                                 token.LPAREN   'parseGroupedExpression
                                 token.IF       'parseIfExpression
-                                token.FUNCTION 'parseFunctionLiteral
-                                ))
+                                token.FUNCTION 'parseFunctionLiteral))
+
 
         (set! infixParseFns (hash
                                 token.PLUS       'parseInfixExpression
@@ -60,17 +61,17 @@
                                 token.GT         'parseInfixExpression
 
 
-                                token.LPAREN     'parseCallExpression
+                                token.LPAREN     'parseCallExpression))
 
 
-                                ))
+
         ;// Read two tokens, so curToken and peekToken are both set
         (nextToken)
-        (nextToken)
+        (nextToken)))
 
 
-       );::END begin
-    );  ::END initialize
+       ;::END begin
+    ;  ::END initialize
     (initialize);; Might need to call at the bottom.
 
     (define/private (nextToken) (begin
@@ -81,34 +82,34 @@
     (define/private (peekTokenIs t) (equal? (get-field Type peekToken ) t))
     (define/private (expectPeek t) (if (peekTokenIs t)
                                        (begin  (nextToken)   #t)
-                                       (begin  (peekError t) #f)
-                                    ))
+                                       (begin  (peekError t) #f)))
+
 
 
 
     (define/public (Errors) errors)
     (define/private (peekError t)
       (define msg (format "expected next token to be ~a, got ~a instead" t (get-field Type peekToken)))
-      (append errors (list msg))
-    )
+      (append errors (list msg)))
+
 
     (define/private (noPrefixParseFnError t)
-      (define msg (format "no prefix parse function for ~a found" t ))
-      (append errors (list msg))
-    )
+      (define msg (format "no prefix parse function for ~a found" t))
+      (append errors (list msg)))
+
 
     (define/public (ParseProgram)
-      (define program (new ast.Program [Statements (list)] ))
+      (define program (new ast.Program [Statements (list)]))
       (printf "in ParseProgram \n ==program== ~a\n" program)
       (while (not (curTokenIs token.EOF)) (begin
                                             (define stmt (parseStatement))
                                             (define statements (get-field Statements program))
                                             (unless (null? stmt) (set-field! Statements program (append statements (list stmt))))
                                             (nextToken)
-                                            (printf "lenght statements : ~a\n" (length (get-field Statements program)) )
-                                            ))
-      program
-    )
+                                            (printf "lenght statements : ~a\n" (length (get-field Statements program)))))
+
+      program)
+
 
     (define/private (parseStatement)
       ;; (printf "in parseStatement\n curToken.Type : ~a\n" (get-field Type curToken))
@@ -119,9 +120,9 @@
       (cond
         [(equal? token.LET    type)    (parseLetStatement)]
         [(equal? token.RETURN type)    (parseReturnStatement)]
-        [ else                         (parseExpressionStatement)]
-      )
-    )
+        [ else                         (parseExpressionStatement)]))
+
+
 
     (define/private (parseLetStatement)
       (printf "in parseLetStatement\n")
@@ -131,7 +132,7 @@
                   (define token curToken)
                   (unless (expectPeek token.IDENT) (set! returnValue null) (break))
 
-                  (define name (new ast.Identifier [Token curToken] [Value (get-field Literal curToken)] ))
+                  (define name (new ast.Identifier [Token curToken] [Value (get-field Literal curToken)]))
 
                   (unless (expectPeek token.ASSIGN) (set! returnValue null) (break))
                   (nextToken)
@@ -141,14 +142,14 @@
                   (when (peekTokenIs token.SEMICOLON) (nextToken))
 
                   (set! returnValue
-                        (new ast.LetStatement [Token token] [Name name] [Value value])
-                  )
-                  (printf "In parseLetStatement ~a\n" returnValue )
-                  (break)
-                 )); :: END WHILE
+                        (new ast.LetStatement [Token token] [Name name] [Value value]))
 
-      returnValue
-    ); :: END parseLetStatement
+                  (printf "In parseLetStatement ~a\n" returnValue)
+                  (break)))
+                 ; :: END WHILE
+
+      returnValue)
+    ; :: END parseLetStatement
 
     (define/private (parseReturnStatement)
       (define token curToken)
@@ -157,9 +158,9 @@
       (when (peekTokenIs token.SEMICOLON) (nextToken))
 
       (define stmt (new ast.ReturnStatement [Token token] [ReturnValue returnValue]))
-      stmt
+      stmt)
 
-    )
+
 
     (define/private (parseExpressionStatement)
       (printf "in parseExpressionStatement\n")
@@ -170,100 +171,101 @@
 
       (when (peekTokenIs token.SEMICOLON) (nextToken))
 
-      stmt
-    )
+      stmt)
 
 
-      (define/private (dynamicDispatchPrefix symbol)
-          (printf "in dynamicDispatchPrefix\n")
+
+    (define/private (dynamicDispatchPrefix symbol)
+        (printf "in dynamicDispatchPrefix\n")
 
 
-          (cond
+        (cond
 
-            [(equal? symbol 'parseIdentifier) (parseIdentifier)]
-            [(equal? symbol 'parseIntegerLiteral) (parseIntegerLiteral)]
-            [(equal? symbol 'parsePrefixExpression) (parsePrefixExpression)]
-            [(equal? symbol 'parseBoolean) (parseBoolean)]
-            [(equal? symbol 'parseGroupedExpression) (parseGroupedExpression)]
-            [(equal? symbol 'parseIfExpression) (parseIfExpression)]
-            [(equal? symbol 'parseFunctionLiteral) (parseFunctionLiteral)]
+          [(equal? symbol 'parseIdentifier) (parseIdentifier)]
+          [(equal? symbol 'parseIntegerLiteral) (parseIntegerLiteral)]
+          [(equal? symbol 'parseStringLiteral) (parseStringLiteral)]
+          [(equal? symbol 'parsePrefixExpression) (parsePrefixExpression)]
+          [(equal? symbol 'parseBoolean) (parseBoolean)]
+          [(equal? symbol 'parseGroupedExpression) (parseGroupedExpression)]
+          [(equal? symbol 'parseIfExpression) (parseIfExpression)]
+          [(equal? symbol 'parseFunctionLiteral) (parseFunctionLiteral)]
 
-            ;; This should never happend because symbol is assumed to exist.
-            [else (raise "function does not exist : provided ~a"  (symbol->string symbol))]
-            ;; [else null]
-          )
-       )
-
-      (define/private (dynamicDispatchInfix symbol expr)
-
-        (printf "in dynamicDispatchInfix\n")
+          ;; This should never happend because symbol is assumed to exist.
+          [else (raise "function does not exist : provided ~a"  (symbol->string symbol))]))
+          ;; [else null]
 
 
-          (cond
 
-            [(equal? symbol 'parseInfixExpression) (parseInfixExpression expr)]
-            [(equal? symbol 'parseCallExpression) (parseCallExpression expr)]
-            ;; This should never happend because symbol is assumed to exist.
-            [else (raise "function does not exist : provided ~a"  (symbol->string symbol))]
-            ;; [else null]
-          )
-       )
+    (define/private (dynamicDispatchInfix symbol expr)
 
-      (define/private (parseExpression precedence)
-      (printf "in parseExpression\n")
-      (define returnValue null)
-      (while #t (begin
-                    (define prefixSymbol (hash-ref prefixParseFns (get-field Type curToken) null))
-                    (when (null? prefixSymbol) (noPrefixParseFnError (get-field Type curToken)) (set! returnValue null) (break))
+      (printf "in dynamicDispatchInfix\n")
 
 
-                    (define leftExp (dynamicDispatchPrefix prefixSymbol))
-                    (define cont #t)
-                    (while (and
-                              cont
-                              (not (peekTokenIs token.SEMICOLON))
-                              (< precedence (peekPrecedence))
-                           )
-                          (begin
+      (cond
 
-                            (define infixSymbol (hash-ref infixParseFns (get-field Type peekToken) null))
-                            (printf "infixSymbol : ~a\n" infixSymbol)
-                            (if (null? infixSymbol)
-                                (begin
-                                  (set! returnValue leftExp)
-                                  (set! cont #f)
-                                )
-                                (begin
-                                    (nextToken)
-                                    (set! leftExp (dynamicDispatchInfix infixSymbol leftExp))
-                                )
-                            )
-                          )
-                    );; END WHILE
+        [(equal? symbol 'parseInfixExpression) (parseInfixExpression expr)]
+        [(equal? symbol 'parseCallExpression) (parseCallExpression expr)]
+        ;; This should never happend because symbol is assumed to exist.
+        [else (raise "function does not exist : provided ~a"  (symbol->string symbol))]))
+        ;; [else null]
 
-                    (set! returnValue leftExp)
 
-                    (break)
-                  )
-             )
 
-      returnValue
+    (define/private (parseExpression precedence)
+     (printf "in parseExpression\n")
+     (define returnValue null)
+     (while #t (begin
+                   (define prefixSymbol (hash-ref prefixParseFns (get-field Type curToken) null))
+                   (when (null? prefixSymbol) (noPrefixParseFnError (get-field Type curToken)) (set! returnValue null) (break))
 
-    )  ; :: END parseExpression
+
+                   (define leftExp (dynamicDispatchPrefix prefixSymbol))
+                   (define cont #t)
+                   (while (and
+                             cont
+                             (not (peekTokenIs token.SEMICOLON))
+                             (< precedence (peekPrecedence)))
+
+                         (begin
+
+                           (define infixSymbol (hash-ref infixParseFns (get-field Type peekToken) null))
+                           (printf "infixSymbol : ~a\n" infixSymbol)
+                           (if (null? infixSymbol)
+                               (begin
+                                 (set! returnValue leftExp)
+                                 (set! cont #f))
+
+                               (begin
+                                   (nextToken)
+                                   (set! leftExp (dynamicDispatchInfix infixSymbol leftExp))))))
+
+
+
+                    ;; END WHILE
+
+                   (set! returnValue leftExp)
+
+                   (break)))
+
+
+
+     returnValue)
+
+    ; :: END parseExpression
 
     (define/private (peekPrecedence)
       (define p (hash-ref precedences (get-field Type peekToken) null))
-      (if (null? p) LOWEST p)
-    )
+      (if (null? p) LOWEST p))
+
 
     (define/private (curPrecedence)
       ;; Alternative way to write.
-      (hash-ref precedences (get-field Type curToken) LOWEST)
-    )
+      (hash-ref precedences (get-field Type curToken) LOWEST))
+
 
     (define/private (parseIdentifier)
-      (new ast.Identifier [Token curToken] [Value (get-field Literal curToken)])
-    )
+      (new ast.Identifier [Token curToken] [Value (get-field Literal curToken)]))
+
 
     (define/private (parseIntegerLiteral)
       (printf "in parseIntegerLiteral\n")
@@ -273,10 +275,13 @@
           (new ast.IntegerLiteral [Token token] [Value value])
 
           (let ([msg (format "could not parse ~a as integer" (get-field Literal curToken))])
-            (set! errors (append errors (list msg)))
-          )
-      )
-    )
+            (set! errors (append errors (list msg))))))
+
+
+
+
+    (define/private (parseStringLiteral)
+      (new ast.StringLiteral [Token curToken] [Value (get-field Literal curToken)]))
 
     (define/private (parsePrefixExpression)
       (printf "in parsePrefixExpression\n")
@@ -287,9 +292,9 @@
 
       (define right (parseExpression PREFIX))
 
-      (new ast.PrefixExpression [Token token] [Operator operator] [Right right])
+      (new ast.PrefixExpression [Token token] [Operator operator] [Right right]))
 
-    )
+
 
     (define/private (parseInfixExpression left)
       (printf "in parseInfixExpression\n")
@@ -300,18 +305,18 @@
       (nextToken)
       (define right (parseExpression precedence))
 
-      (new ast.InfixExpression [Token token] [Operator operator] [Left left] [Right right])
-    )
+      (new ast.InfixExpression [Token token] [Operator operator] [Left left] [Right right]))
+
 
     (define/private (parseBoolean)
-      (new ast.Boolean [Token curToken] [Value (curTokenIs token.TRUE)])
-    )
+      (new ast.Boolean [Token curToken] [Value (curTokenIs token.TRUE)]))
+
 
     (define/private (parseGroupedExpression)
       (nextToken)
       (define exp (parseExpression LOWEST))
-      (if (not (expectPeek token.RPAREN)) null exp)
-    )
+      (if (not (expectPeek token.RPAREN)) null exp))
+
 
 
 
@@ -337,9 +342,9 @@
 
                  (when (peekTokenIs token.ELSE)
                     (nextToken)
-                    (unless (expectPeek token.LBRACE) (set! returnValue null) (break) )
-                    (set! alternative (parseBlockStatement))
-                 )
+                    (unless (expectPeek token.LBRACE) (set! returnValue null) (break))
+                    (set! alternative (parseBlockStatement)))
+
 
                  (define expression (new ast.IfExpression
                                          [Token token] [Condition condition]
@@ -348,12 +353,12 @@
                  (set! returnValue expression)
 
 
-                 (break); ::END while
-                 ))
+                 (break))); ::END while
 
-      returnValue
 
-    ); ::END parseIfExpression
+      returnValue)
+
+    ; ::END parseIfExpression
 
     (define/private (parseBlockStatement)
       (printf "in parseBlockStatement\n")
@@ -362,19 +367,19 @@
       (nextToken)
 
       (while (and (not (curTokenIs token.RBRACE))
-                  (not (curTokenIs token.EOF))
-             )
+                  (not (curTokenIs token.EOF)))
+
 
              (begin
                (define stmt (parseStatement))
                (unless (null? stmt) (set! statements (append statements (list stmt))))
-               (nextToken)
+               (nextToken)))
 
-             )
-      )
-      
-      (new ast.BlockStatement [Token token] [Statements statements])
-    )
+
+
+
+      (new ast.BlockStatement [Token token] [Statements statements]))
+
 
     (define/private (parseFunctionLiteral)
       (printf "in parseFunctionLiteral\n")
@@ -387,14 +392,14 @@
                   (unless (expectPeek token.LBRACE) (set! returnValue null) (break))
                   (define body (parseBlockStatement))
                   (set! returnValue (new ast.FunctionLiteral
-                                         [Token token] [Parameters parameters ] [Body body] ))
+                                         [Token token] [Parameters parameters ] [Body body]))
 
-                 (break)
-                 ))
+                 (break)))
 
-      returnValue
 
-    )
+      returnValue)
+
+
 
     (define/private (parseFunctionParameters)
       (printf "in parseFunctionParameters\n")
@@ -415,22 +420,22 @@
                                                      (nextToken)
                                                      (nextToken)
                                                      (set! ident (new ast.Identifier [Token curToken] [Value (get-field Literal curToken)]))
-                                                     (set! identifiers (append identifiers (list ident)))
-                                                     ))
+                                                     (set! identifiers (append identifiers (list ident)))))
+
                   (unless (expectPeek token.RPAREN) (set! returnValue null) (break))
 
                   (set! returnValue identifiers)
-                  (break)
+                  (break)))
 
-                 ))
-      
-      returnValue
 
-    ); :: parseFunctionParamenters
+
+      returnValue)
+
+    ; :: parseFunctionParamenters
 
     (define/private (parseCallExpression func)
-      (new ast.CallExpression [Token curToken] [Function func] [Arguments (parseCallArguments)])
-    )
+      (new ast.CallExpression [Token curToken] [Function func] [Arguments (parseCallArguments)]))
+
 
     (define/private (parseCallArguments)
       (define returnValue null)
@@ -446,28 +451,27 @@
                   (while (peekTokenIs token.COMMA) (begin
                                                      (nextToken)
                                                      (nextToken)
-                                                     (set! args (append args (list (parseExpression LOWEST))))
+                                                     (set! args (append args (list (parseExpression LOWEST))))))
 
-                                                     ))
+
 
                   (unless (expectPeek token.RPAREN) (set! returnValue null) (break))
 
                   (set! returnValue args)
 
-                  (break)
-                 ))
-      returnValue
-    ); :: END parseCallArguments
+                  (break)))
+
+      returnValue)
+    ; :: END parseCallArguments
 
     ; ::Might not be needed.
     (define/private (registerPrefix tokenType fn) (hash-set! prefixParseFns tokenType fn))
 
     ; ::Might not be needed.
-    (define/private (registerInfix tokenType fn) (hash-set! infixParseFns tokenType fn))
+    (define/private (registerInfix tokenType fn) (hash-set! infixParseFns tokenType fn))))
 
 
-  );; END class
-)
+  ;; END class
+
 
 (define (New l) (new Parser [l l]))
-

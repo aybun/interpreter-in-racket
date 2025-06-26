@@ -36,6 +36,7 @@
                                                  (send env Set (get node Name Value) val)
                                                  null)))]
       [(is-a? node ast.IntegerLiteral) (new object.Integer [Value (get node Value)])]
+      [(is-a? node ast.StringLiteral) (new object.String [Value (get node Value)])]
       [(is-a? node ast.Boolean) (nativeBoolToBooleanObject (get node Value))]
       [(is-a? node ast.PrefixExpression) (begin
                                            (define right (Eval (get node Right) env))

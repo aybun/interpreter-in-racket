@@ -284,7 +284,28 @@
     ")
 
   (testIntegerObject (testEval input) 70))
-                     
+
+(define (TestClosures)
+  (define input "
+        let newAdder = fn(x) {
+          fn(y) { x + y };
+        };
+
+        let addTwo = newAdder(2);
+        addTwo(2);
+            ")
+  
+  (testIntegerObject (testEval input) 4))
+
+(define (TestStringLiteral)
+  (define input "\"Hello World!\"")
+  
+  (define evaluated (testEval input))
+  (check-equal? (is-a? evaluated object.String) #t "is-a? object.String")
+
+  (printf "evaluated.Value: ~a\n" (get evaluated Value))
+  (check-equal? (get evaluated Value) "Hello World!"))
+
 (define (testIntegerObject obj expected)
   (printf "in testIntegerObject\n")
   ;; (printf "obj: ~a, obj.Value: ~a\n" obj (get obj Value))
@@ -326,3 +347,5 @@
 (TestFunctionObject)
 (TestFunctionApplication)
 (TestEnclosingEnvironments)
+(TestClosures)
+(TestStringLiteral)

@@ -15,6 +15,7 @@
   ; Identifiers + literals
   (IDENT "IDENT") ;add, foobar, x, y, ...
   (INT   "INT")   ;1343456
+  (STRING "STRING") ; "foobar"
 
   ;Operators
   (ASSIGN    "=")
@@ -38,6 +39,8 @@
   (RPAREN ")")
   (LBRACE "{")
   (RBRACE "}")
+  (LBRACKET "[")
+  (RBRACKET "]")
 
   ;Keywords
   (FUNCTION "FUNCTION")

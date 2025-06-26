@@ -220,7 +220,13 @@
                                                joined-strings
                                                ")")))))
                                                 
-
+(define StringLiteral
+  (class Expression
+    (super-new)
+    (init-field Token Value)
+    (define/override (TokenLiteral) (get-field Literal Token))
+    (define/override (String) (get-field Literal Token))))
+                               
 
                                
 
