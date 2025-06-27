@@ -76,7 +76,36 @@
 
                                                (set! returnValue (applyFunction fun args))
                                                (break)))
-                                         returnValue)]))
+                                         returnValue)]
+      [(is-a? node ast.ArrayLiteral) (begin
+                                       (define elements (evalExpressions (get node Elements) env))
+                                       (if (and (equal? (length elements) 1)
+                                                (isError (first elements)))
+                                           (first elements)
+                                           (new object.Array [Elements elements])))]
+      [(is-a? node ast.IndexExpression) (begin
+                                          (define returnValue null)
+                                          (while #t (begin
+
+                                                     (define left (Eval (get node Left) env))
+                                                     (when (isError left)
+                                                       (set! returnValue left)
+                                                       (break))
+
+                                                     (define index (Eval (get node Index) env))
+
+                                                     (when (isError index)
+                                                       (set! returnValue index)
+                                                       (break))
+
+                                                     (set! returnValue (evalIndexExpression left index))
+
+                                                     (break)))
+                                          returnValue)]
+      [(is-a? node ast.HashLiteral) (evalHashLiteral node env)]
+
+      [else null]))
+
 
 (define (evalProgram program env)
   (printf "in evalProgram\n")
@@ -270,6 +299,69 @@
     (if (is-a? obj object.ReturnValue)
         (get obj Value)
         obj))
+
+(define (evalIndexExpression left index)
+  (cond
+    [(and (equal? (send left Type) (object.ARRAY_OBJ))
+          (equal? (send index Type) (object.INTEGER_OBJ))) (evalArrayIndexExpression left index)]
+    [(equal? (send left Type) object.HASH_OBJ) (evalHashIndexExpression left index)]
+    [else (newError "index operator not supported: ~a" (send left Type))]))
+
+(define (evalArrayIndexExpression array index)
+  (define idx (get index Value))
+  (define max (- (length (get array Elements)) 1))
+
+  (if (or (< idx 0) (> idx max))
+      null
+      (list-ref array idx)))
+
+(define (evalHashLiteral node env)
+  (define pairs (make-hash '()))
+  (define key null)
+  (define value null)
+  (define returnValue null)
+
+  (hash-for-each
+   (get node Pairs)
+   (lambda (keyNode valueNode)
+     (while #t (begin
+                 (set! key (Eval keyNode env))
+
+                 (when (isError key)
+                   (set! returnValue key)
+                   (break))
+
+                 (when (not (implementation? key object.Hashable))
+                   (set! returnValue
+                         (newError "unusable as hash key: ~a" (send key Type)))
+                   (break))
+
+                 (set! value (Eval valueNode env))
+
+                 (when (isError value)
+                   (set! returnValue value)
+                   (break))
+
+                 (hash-set! pairs (send key HashKey) (new object.HashPair [Key key] [Value value]))
+
+                 (break)))))
+  returnValue)
+
+(define (evalHashIndexExpression hash-table index)
+  (define returnValue null)
+
+  (while #t
+    (begin
+      (when (not (implementation? index object.Hashable))
+        (set! returnValue (newError "unusable as hash key: ~a" (send index Type)))
+        (break))
+      (define pair (hash-ref (get hash-table Pairs) (send index HashKey) null))
+
+      (if (null? pair)
+          (set! returnValue null)
+          (set! returnValue (get pair Value)))
+      (break)))
+  returnValue)
 
 
 ; Helper Zone

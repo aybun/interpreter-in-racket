@@ -15,6 +15,7 @@
 (define PRODUCT 5)      ; *
 (define PREFIX 6)       ; -X or !X
 (define CALL 7)         ; myFunction(X)
+(define INDEX 8)        ; array[index]
 
 
 
@@ -27,7 +28,8 @@
                      token.MINUS    SUM
                      token.SLASH    PRODUCT
                      token.ASTERISK PRODUCT
-                     token.LPAREN   CALL))
+                     token.LPAREN   CALL
+                     token.LBRACKET INDEX))
 
 (define Parser
   (class object%
@@ -47,21 +49,25 @@
                                 token.FALSE    'parseBoolean
                                 token.LPAREN   'parseGroupedExpression
                                 token.IF       'parseIfExpression
-                                token.FUNCTION 'parseFunctionLiteral))
+                                token.FUNCTION 'parseFunctionLiteral
+                                token.LBRACKET 'parseArrayLiteral
+                                token.LBRACE   'parseHashLiteral))
+
 
 
         (set! infixParseFns (hash
-                                token.PLUS       'parseInfixExpression
-                                token.MINUS      'parseInfixExpression
-                                token.SLASH      'parseInfixExpression
-                                token.ASTERISK   'parseInfixExpression
-                                token.EQ         'parseInfixExpression
-                                token.NOT_EQ     'parseInfixExpression
-                                token.LT         'parseInfixExpression
-                                token.GT         'parseInfixExpression
+                             token.PLUS       'parseInfixExpression
+                             token.MINUS      'parseInfixExpression
+                             token.SLASH      'parseInfixExpression
+                             token.ASTERISK   'parseInfixExpression
+                             token.EQ         'parseInfixExpression
+                             token.NOT_EQ     'parseInfixExpression
+                             token.LT         'parseInfixExpression
+                             token.GT         'parseInfixExpression
 
 
-                                token.LPAREN     'parseCallExpression))
+                             token.LPAREN     'parseCallExpression
+                             token.LBRACKET   'parseIndexExpression))
 
 
 
@@ -189,6 +195,8 @@
           [(equal? symbol 'parseGroupedExpression) (parseGroupedExpression)]
           [(equal? symbol 'parseIfExpression) (parseIfExpression)]
           [(equal? symbol 'parseFunctionLiteral) (parseFunctionLiteral)]
+          [(equal? symbol 'parseArrayLiteral) (parseArrayLiteral)]
+          [(equal? symbol 'parseHashLiteral) (parseHashLiteral)]
 
           ;; This should never happend because symbol is assumed to exist.
           [else (raise "function does not exist : provided ~a"  (symbol->string symbol))]))
@@ -205,6 +213,7 @@
 
         [(equal? symbol 'parseInfixExpression) (parseInfixExpression expr)]
         [(equal? symbol 'parseCallExpression) (parseCallExpression expr)]
+        [(equal? symbol) 'parseIndexExpression (parseIndexExpression expr)]
         ;; This should never happend because symbol is assumed to exist.
         [else (raise "function does not exist : provided ~a"  (symbol->string symbol))]))
         ;; [else null]
@@ -434,7 +443,7 @@
     ; :: parseFunctionParamenters
 
     (define/private (parseCallExpression func)
-      (new ast.CallExpression [Token curToken] [Function func] [Arguments (parseCallArguments)]))
+      (new ast.CallExpression [Token curToken] [Function func] [Arguments (parseExpressionList token.RPAREN)]))
 
 
     (define/private (parseCallArguments)
@@ -463,6 +472,64 @@
 
       returnValue)
     ; :: END parseCallArguments
+
+    (define/private (parseExpressionList end)
+      (define returnList (list))
+      (while #t (begin
+
+                  (when (peekTokenIs end) (nextToken) (break))
+
+                  (nextToken)
+
+                  (set! returnList (append returnList (list (parseExpression LOWEST))))
+
+                  (while (peekTokenIs token.COMMA) (begin
+                                                     (nextToken)
+                                                     (nextToken)
+                                                     (set! returnList (append returnList (list (parseExpression LOWEST))))))
+
+                  (unless (expectPeek end) (set! returnList null) (break))
+
+                  (break)))
+      returnList)
+
+    (define/private (parseArrayLiteral)
+      (new ast.ArrayLiteral [Token curToken] [Elements (parseExpressionList token.RBRACKET)]))
+
+    (define/private (parseIndexExpression left)
+      (define exp (new ast.IndexExpression [Token curToken] [Left left] [Index null]))
+      (nextToken)
+      (set-field! Index exp (parseExpression LOWEST))
+
+      (if (not (expectPeek token.RBRACKET))
+          null
+          exp))
+
+    (define/private (parseHashLiteral)
+      (define hash (new ast.HashLiteral [Token curToken] [Pairs (make-hash '())]))
+      (define returnValue null)
+      (define earlyReturn #f)
+      (while (and (not (peekTokenIs token.RBRACE))
+                  (not earlyReturn))
+        (begin
+          (nextToken)
+          (define key (parseExpression LOWEST))
+          (unless (expectPeek token.COLON) (set! returnValue null) (set! earlyReturn #t) (break))
+          (nextToken)
+          (define value (parseExpression LOWEST))
+          (hash-set! (get-field Pairs hash) key value)
+          (when (and (not (peekTokenIs token.RBRACE))
+                     (not (expectPeek token.COMMA)))
+            (set! returnValue null)
+            (set! earlyReturn #t)
+            (break))))
+
+      (if earlyReturn
+          returnValue
+          (if (not (expectPeek token.RBRACE))
+            null
+            hash)))
+
 
     ; ::Might not be needed.
     (define/private (registerPrefix tokenType fn) (hash-set! prefixParseFns tokenType fn))

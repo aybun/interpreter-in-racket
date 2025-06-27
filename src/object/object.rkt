@@ -17,6 +17,7 @@
 
 (struct HashKey (Type Value) #:transparent #:constructor-name -hash-key)
 
+(define Hashable (interface () HashKey))
 (define Object
   (class object%
     (super-new)
@@ -24,7 +25,7 @@
     (define/public (Inspect) null)))
 
 (define Integer
-  (class Object
+  (class* Object (Hashable)
     (super-new)
     (init-field Value)
     (define/override (Type) INTEGER_OBJ)
@@ -33,7 +34,7 @@
       (-hash-key (Type) Value))))
 
 (define Boolean
-  (class Object
+  (class* Object (Hashable)
     (super-new)
     (init-field Value)
     (define/override (Type) BOOLEAN_OBJ)
@@ -84,13 +85,13 @@
                                    "\n}")))))
 
 (define String
-  (class Object
+  (class* Object (Hashable)
     (super-new)
     (init-field Value)
     (define/override (Type) STRING_OBJ)
     (define/override (Inspect) Value)
     (define/public (HashKey) (-hash-key (Type) (equal-hash-code Value)))))
-   
+
 (define Builtin
   (class Object
     (super-new)
@@ -110,7 +111,7 @@
         "["
         (string-join elements ", ")
         "]"))))
-        
+
 
 (define HashPair
   (class object%
@@ -139,5 +140,3 @@
      (get-field f obj)]
     [(get obj f1 f2)
      (get (get-field f1 obj) f2)]))
-
-

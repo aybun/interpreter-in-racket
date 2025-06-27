@@ -4,20 +4,16 @@
 (require racket/class)
 
 
-(define (distance)
-  (77)
-  )
-
 (define Point
   (class object%
+    (super-new)
     (init-field x y)
     (define/public (distance)
       (sqrt (+ (sqr x) (sqr y))))
     (define/public (double-distance)
-      (* 2 (distance) ) )
+      (* 2 (distance)))
     (define/public (reset)
-      (set! x 0) (set! y 0) )
-    (super-new)))
+      (set! x 0) (set! y 0))))
 
 (define p (new Point [x 3] [y 4]))
 (send p distance)
@@ -32,8 +28,8 @@
 
 (define keywords (hasheq
                         "fn" "FUNCTION"
-                        "let" "LET"
-                         ))
+                        "let" "LET"))
+
 (define tok (hash-ref keywords "fn" null))
 (printf "tok: ~a\n" tok)
 
@@ -43,23 +39,23 @@
 (define Animal
   (class object%
     (super-new)
-    (define/public (sound) null)
-))
+    (define/public (sound) null)))
+
 
 
 (define Mammal
   (class Animal
-    (super-new)
-   )
-)
+    (super-new)))
+
+
 
 
 (define Dog
   (class Animal
     (init-field name)
     (super-new)
-    (define/override (sound) (format "helo ~a" name) ))
-)
+    (define/override (sound) (format "helo ~a" name))))
 
-(define a (new Dog [name "Jones"] ))
+
+(define a (new Dog [name "Jones"]))
 (send a sound)
