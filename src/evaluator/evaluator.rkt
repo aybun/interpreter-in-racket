@@ -5,6 +5,7 @@
 (require (prefix-in object. "../object/object.rkt"))
 (require (prefix-in object. "../object/environment.rkt"))
 
+
 (provide NULL TRUE FALSE Eval)
 
 (define NULL (new object.Null))
@@ -233,15 +234,26 @@
 
 
 (define (evalIdentifier node env)
-    (define returnedList (send env Get (get node Value)))
-    (define val (first returnedList))
-    (define ok  (second returnedList))
+  (define returnValue null)
+  (while #t
+    (begin
+      (define returnedList (send env Get (get node Value)))
+      (define val (first returnedList))
+      (define ok  (second returnedList))
 
-    (if (not ok)
-        (begin
-           (printf "node.Value ~a\n" (get node Value))
-           (newError (format "identifier not found: ~a" (get node Value))))
-        val))
+      (when ok (set! returnValue val) (break))
+
+      (define builtin (hash-ref builtins (get node Value) null))
+      (when (not (null? builtin))
+        (set! returnValue builtin)
+        (break))
+
+      (set! returnValue (newError (string-append "identifier not found: " (get node Value))))
+      (break)))
+
+  returnValue)
+
+
 
 
 (define (isTruthy obj)
@@ -276,24 +288,22 @@
     returnValue)
 
 (define (applyFunction fn args)
-    (define returnValue null)
-    (while #t (begin
-                  (when (not (is-a? fn object.Function))
-                        (set! returnValue (newError "not a function: ~a" (send fn Type)))
-                        (break))
-                  (define extendedEnv (extendFunctionEnv fn args))
-                  (define evaluated (Eval (get fn Body) extendedEnv))
-                  (set! returnValue (unwrapReturnValue evaluated))
-                  (break)))
-    returnValue)
+  (cond
+    [(is-a? fn object.Function) (begin
+                                  (define extendedEnv (extendFunctionEnv fn args))
+                                  (define evaluated (Eval (get fn Body) extendedEnv))
+                                  (unwrapReturnValue evaluated))]
+    [(is-a? fn object.Builtin) (apply (get fn Fn) args)]
+    [else (newError "not a function: ~a" (send fn Type))]))
+
 (define (extendFunctionEnv fn args)
-    (define env (object.NewEnclosedEnvironment (get fn Env)))
+  (define env (object.NewEnclosedEnvironment (get fn Env)))
 
-    (for/list ( [i (in-naturals 0)]
-                [param (get fn Parameters)])
-        (send env Set (get param Value) (list-ref args i)))
+  (for/list ( [i (in-naturals 0)]
+              [param (get fn Parameters)])
+    (send env Set (get param Value) (list-ref args i)))
 
-    env)
+  env)
 
 (define (unwrapReturnValue obj)
     (if (is-a? obj object.ReturnValue)
@@ -302,8 +312,9 @@
 
 (define (evalIndexExpression left index)
   (cond
-    [(and (equal? (send left Type) (object.ARRAY_OBJ))
-          (equal? (send index Type) (object.INTEGER_OBJ))) (evalArrayIndexExpression left index)]
+    [(and (equal? (send left Type) object.ARRAY_OBJ)
+          (equal? (send index Type) object.INTEGER_OBJ))
+     (evalArrayIndexExpression left index)]
     [(equal? (send left Type) object.HASH_OBJ) (evalHashIndexExpression left index)]
     [else (newError "index operator not supported: ~a" (send left Type))]))
 
@@ -363,6 +374,69 @@
       (break)))
   returnValue)
 
+
+; builtins.rkt
+; copy-pasted to avoid circular dependency.
+
+(define builtins
+  (hash
+   "len" (new object.Builtin
+              [Fn (lambda args
+                    (cond
+                      [(not (equal? (length args) 1)) (newError "wrong number of arguments. got=~a, want=1" (length args))]
+                      [(is-a? (first args) object.Array) (new object.Integer [Value (length (get (first args) Elements))])]
+                      [(is-a? (first args) object.String) (new object.Integer [Value (string-length (get (first args) Value))])]
+                      [else (newError "argument to `len` not supported, got ~a" (send (first args) Type))]))])
+
+   "puts" (new object.Builtin
+               [Fn (lambda args
+                     (begin
+                       (for/list ([arg args])
+                         (printf "~a\n" (send arg Inspect)))
+                       null))])
+   "first" (new object.Builtin
+                [Fn (lambda args
+                        (cond
+                          [(not (equal? (length args) 1)) (newError "wrong number of arguments. got=~a, want=1" (length args))]
+                          [(not (equal? (send (first args) Type) object.ARRAY_OBJ)) (newError "argument to `first` must be ARRAY, got ~a" (send (first args) Type))]
+                          [else (begin
+                                  (define arr (first args))
+                                  (define arr-length (length (get arr Elements)))
+                                  (if (> arr-length 0)
+                                      (first (get arr Elements))
+                                      null))]))])
+   "last" (new object.Builtin
+               [Fn (lambda args
+                     (cond
+                       [(not (equal? (length args) 1)) (newError "wrong number of arguments. got=~a, want=1" (length args))]
+                       [(not (equal? (send (first args) Type) object.ARRAY_OBJ)) (newError "argument to `last` must be ARRAY, got ~a" (send (first args) Type))]
+                       [else (begin
+                               (define arr (first args))
+                               (define arr-length (length (get arr Elements)))
+                               (if (> arr-length 0)
+                                   (last (get arr Elements))
+                                   null))]))])
+
+   "rest" (new object.Builtin
+               [Fn (lambda args
+                     (cond
+                       [(not (equal? (length args) 1)) (newError "wrong number of arguments. got=~a, want=1" (length args))]
+                       [(not (equal? (send (first args) Type) object.ARRAY_OBJ)) (newError "argument to `rest` must be ARRAY, got ~a" (send (first args) Type))]
+                       [else (begin
+                               (define arr (first args))
+                               (define arr-length (length (get arr Elements)))
+                               (if (> arr-length 0)
+                                   (new object.Array [Elements (rest (get arr Elements))])
+                                   null))]))])
+   "push" (new object.Builtin
+               [Fn (lambda args
+                     (cond
+                       [(not (equal? (length args) 2)) (newError "wrong number of arguments. got=~a, want=2" (length args))]
+                       [(not (equal? (send (first args) Type) object.ARRAY_OBJ)) (newError "argument to `push` must be ARRAY, got ~a" (send (first args) Type))]
+                       [else (begin
+                               (define arr (first args))
+                               (define arr-length (length (get arr Elements)))
+                               (new object.Array [Elements (append (get arr Elements) (list (second args)))]))]))])))
 
 ; Helper Zone
 

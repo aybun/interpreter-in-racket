@@ -314,15 +314,63 @@
   (printf "evaluated.Value: ~a\n" (get evaluated Value))
   (check-equal? (get evaluated Value) "Hello World!"))
 
+(define (TestBuiltinFunctions)
+  (printf "in TestBuiltinFunctions")
+  (define tests '(
+                  ("len(\"\")" 0)
+                  ("len(\"four\")" 4)
+                  ("len(\"hello world\")" 11)
+                  ("len(1)" "argument to `len` not supported, got INTEGER")
+                  ("len(\"one\", \"two\")" "wrong number of arguments. got=2, want=1")
+                  ("len([1, 2, 3])" 3)
+                  ("len([])" 0)
+                  ("puts("hello", "world!")" ())
+                  ("first([1, 2, 3])" 1)
+                  ("first([])" ())
+                  ("first(1)" "argument to `first` must be ARRAY, got INTEGER")
+                  ("last([1, 2, 3])" 3)
+                  ("last([])" ())
+                  ("last(1)" "argument to `last` must be ARRAY, got INTEGER")
+                  ("rest([1, 2, 3])" (2 3))
+                  ("rest([])" ())
+                  ("push([], 1)" (1))
+                  ("push(1, 1)" "argument to `push` must be ARRAY, got INTEGER")
+                  ))
+
+  (for/list ([tt tests]
+             [i (in-naturals 0)])
+
+    (define input (first tt))
+    (define expected (second tt))
+    (define evaluated (testEval input))
+
+    (printf "i: ~a\n" i)
+    (printf "evaluated: ~a\n" evaluated)
+    (printf "expected: ~a\n" expected)
+    (when (is-a? evaluated object.Error) (printf "ERROR MESSAGE: ~a\n" (get evaluated Message)))
+
+    (cond
+      [(integer? expected) (testIntegerObject evaluated expected)]
+      [(null? expected) (testNullObject evaluated)]
+      [(string? expected) (begin
+                            (check-equal? (is-a? evaluated object.Error) #t "is-a? object.Error")
+                            (check-equal? (get evaluated Message) expected))]
+      [(list? expected) (begin
+                          (check-equal? (is-a? evaluated object.Array) #t "is-a? object.Array")
+                          (check-equal? (length (get evaluated Elements)) (length expected) "len")
+                          (for/list ([intObj (get evaluated Elements)]
+                                     [ex expected])
+                            (testIntegerObject intObj ex))
+                          ) ])))
 
 
 (define (testIntegerObject obj expected)
-  (printf "in testIntegerObject\n")
-  ;; (printf "obj: ~a, obj.Value: ~a\n" obj (get obj Value))
-  ;; (printf "obj: ~a\nexpected: ~a\n" obj expected)
+    (printf "in testIntegerObject\n")
+    ;; (printf "obj: ~a, obj.Value: ~a\n" obj (get obj Value))
+    ;; (printf "obj: ~a\nexpected: ~a\n" obj expected)
 
-  (check-equal? (is-a? obj object.Integer) #t "is-a? object.Integer")
-  (check-equal? (get obj Value) expected) "obj.Value =? expected")
+    (check-equal? (is-a? obj object.Integer) #t "is-a? object.Integer")
+    (check-equal? (get obj Value) expected) "obj.Value =? expected")
 
 (define (testBooleanObject obj expected)
   (check-equal? (is-a? obj object.Boolean) #t) "is-a? object.Boolean"
@@ -360,3 +408,4 @@
 (TestClosures)
 (TestStringLiteral)
 (TestStringConcatenation)
+(TestBuiltinFunctions)
