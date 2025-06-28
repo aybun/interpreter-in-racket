@@ -324,7 +324,7 @@
 
   (if (or (< idx 0) (> idx max))
       null
-      (list-ref array idx)))
+      (list-ref (get array Elements) idx)))
 
 (define (evalHashLiteral node env)
   (define pairs (make-hash '()))

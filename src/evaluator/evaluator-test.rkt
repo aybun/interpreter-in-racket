@@ -360,17 +360,82 @@
                           (check-equal? (length (get evaluated Elements)) (length expected) "len")
                           (for/list ([intObj (get evaluated Elements)]
                                      [ex expected])
-                            (testIntegerObject intObj ex))
-                          ) ])))
+                            (testIntegerObject intObj ex)))])))
+
+(define (TestArrayLiterals)
+  (define input "[1, 2 * 2, 3 + 3]")
+  (define evaluated (testEval input))
+  (check-equal? (is-a? evaluated object.Array) #t "is-a? object.Array")
+  (check-equal? (length (get evaluated Elements)) 3 "check len")
+  (testIntegerObject (first (get evaluated Elements)) 1)
+  (testIntegerObject (second (get evaluated Elements)) 4)
+  (testIntegerObject (third (get evaluated Elements)) 6)
+  )
+
+(define (TestArrayIndexExpressions)
+ (define tests '(
+                 		(
+                       "[1, 2, 3][0]"
+                       1
+                       )
+                      (
+                       "[1, 2, 3][1]"
+                       2
+                       )
+                      (
+                       "[1, 2, 3][2]"
+                       3
+                       )
+                      (
+                       "let i = 0; [1][i];"
+                       1
+                       )
+                      (
+                       "[1, 2, 3][1 + 1];"
+                       3
+                       )
+                      (
+                       "let myArray = [1, 2, 3]; myArray[2];"
+                       3
+                       )
+                      (
+                       "let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];"
+                       6
+                       )
+                      (
+                       "let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]"
+                       2
+                       )
+                      (
+                       "[1, 2, 3][3]"
+                       ()
+                       )
+                      (
+                       "[1, 2, 3][-1]"
+                       ()
+                       )
+                      ))
+  (for/list ([tt tests]
+             [i (in-naturals 0)])
+    (define input (first tt))
+    (define expected (second tt))
+
+    (define evaluated (testEval input))
+
+    (if (integer? expected)
+        (testIntegerObject evaluated expected)
+        (testNullObject evaluated)))
+  )
+
 
 
 (define (testIntegerObject obj expected)
-    (printf "in testIntegerObject\n")
-    ;; (printf "obj: ~a, obj.Value: ~a\n" obj (get obj Value))
-    ;; (printf "obj: ~a\nexpected: ~a\n" obj expected)
+  (printf "in testIntegerObject\n")
+  ;; (printf "obj: ~a, obj.Value: ~a\n" obj (get obj Value))
+  ;; (printf "obj: ~a\nexpected: ~a\n" obj expected)
 
-    (check-equal? (is-a? obj object.Integer) #t "is-a? object.Integer")
-    (check-equal? (get obj Value) expected) "obj.Value =? expected")
+  (check-equal? (is-a? obj object.Integer) #t "is-a? object.Integer")
+  (check-equal? (get obj Value) expected) "obj.Value =? expected")
 
 (define (testBooleanObject obj expected)
   (check-equal? (is-a? obj object.Boolean) #t) "is-a? object.Boolean"
@@ -409,3 +474,5 @@
 (TestStringLiteral)
 (TestStringConcatenation)
 (TestBuiltinFunctions)
+(TestArrayLiterals)
+(TestArrayIndexExpressions)

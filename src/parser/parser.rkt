@@ -213,7 +213,7 @@
 
         [(equal? symbol 'parseInfixExpression) (parseInfixExpression expr)]
         [(equal? symbol 'parseCallExpression) (parseCallExpression expr)]
-        [(equal? symbol) 'parseIndexExpression (parseIndexExpression expr)]
+        [(equal? symbol 'parseIndexExpression) (parseIndexExpression expr)]
         ;; This should never happend because symbol is assumed to exist.
         [else (raise "function does not exist : provided ~a"  (symbol->string symbol))]))
         ;; [else null]
