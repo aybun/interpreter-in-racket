@@ -57,7 +57,11 @@
 (define Token
   (class object%
     (init-field Type Literal)
-    (super-new)))
+    (super-new)
+    (define/public (Inspect)
+      (format "Token {Type: ~a, Literal: ~a}\n" Type Literal))))
+
+  
 
 (define keywords (hash
                         "fn" FUNCTION

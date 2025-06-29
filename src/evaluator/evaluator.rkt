@@ -16,9 +16,6 @@
 (define (Eval node env)
    (printf "in Eval\n")
    (printf "node : ~a\n" node)
-   (printf "node is ReturnStatement : ~a\n" (is-a? node ast.ReturnStatement))
-   (printf "node is FunctionLiteral : ~a\n" (is-a? node ast.FunctionLiteral))
-   (printf "node is Identifier : ~a\n" (is-a? node ast.Identifier))
 
    (cond
       [(is-a? node ast.Program ) (evalProgram node env)]
@@ -327,43 +324,51 @@
       (list-ref (get array Elements) idx)))
 
 (define (evalHashLiteral node env)
+  (printf "in evalHashLiteral\n")
   (define pairs (make-hash '()))
   (define key null)
   (define value null)
   (define returnValue null)
+  (define errorOccurred #f)
 
   (hash-for-each
-   (get node Pairs)
-   (lambda (keyNode valueNode)
-     (while #t (begin
-                 (set! key (Eval keyNode env))
+    (get node Pairs)
+    (lambda (keyNode valueNode)
+      (while #t (begin
+                  (set! key (Eval keyNode env))
 
-                 (when (isError key)
-                   (set! returnValue key)
-                   (break))
+                  (when (isError key)
+                    (set! returnValue key)
+                    (break))
+                  
+                  (when (not (is-a? key object.Hashable))
+                    (set! errorOccurred #t)
+                    (set! returnValue
+                          (newError "unusable as hash key: ~a" (send key Type)))
+                    (break))
 
-                 (when (not (implementation? key object.Hashable))
-                   (set! returnValue
-                         (newError "unusable as hash key: ~a" (send key Type)))
-                   (break))
+                  (set! value (Eval valueNode env))
 
-                 (set! value (Eval valueNode env))
+                  (when (isError value)
+                    (set! errorOccurred #t)
+                    (set! returnValue value)
+                    (break))
 
-                 (when (isError value)
-                   (set! returnValue value)
-                   (break))
+                  (hash-set! pairs (send key HashKey) (new object.HashPair [Key key] [Value value]))
 
-                 (hash-set! pairs (send key HashKey) (new object.HashPair [Key key] [Value value]))
+                  (break)))))
 
-                 (break)))))
+  (when (not errorOccurred)
+      (set! returnValue (new object.Hash [Pairs pairs])))
   returnValue)
+
 
 (define (evalHashIndexExpression hash-table index)
   (define returnValue null)
 
   (while #t
     (begin
-      (when (not (implementation? index object.Hashable))
+      (when (not (is-a? index object.Hashable))
         (set! returnValue (newError "unusable as hash key: ~a" (send index Type)))
         (break))
       (define pair (hash-ref (get hash-table Pairs) (send index HashKey) null))

@@ -124,8 +124,13 @@
     (init-field Pairs)
     (define/override (Type) HASH_OBJ)
     (define/override (Inspect)
-      (define pairs (map (lambda (e)
-                           (format "~a: ~a" (send (get e Key) Inspect) (send (get e Value) Inspect)))))
+      (define pairs (list)) 
+
+      (hash-for-each
+        Pairs
+        (lambda (key hashPair)
+          (set! pairs (append pairs (list (format "~a: ~a" (send (get hashPair Key) Inspect) (send (get hashPair Value) Inspect)))))))
+
       (string-append
         "{"
         (string-join pairs ", ")

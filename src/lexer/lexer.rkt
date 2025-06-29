@@ -107,6 +107,9 @@
               (#\;) (newToken token.SEMICOLON ch)]
 
              [
+              (#\:) (newToken token.COLON ch)]
+
+             [
               (#\,) (newToken token.COMMA ch)]
 
              [

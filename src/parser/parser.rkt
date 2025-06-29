@@ -506,6 +506,7 @@
           exp))
 
     (define/private (parseHashLiteral)
+      (printf "in parseHashLiteral\n")
       (define hash (new ast.HashLiteral [Token curToken] [Pairs (make-hash '())]))
       (define returnValue null)
       (define earlyReturn #f)
@@ -514,16 +515,24 @@
         (begin
           (nextToken)
           (define key (parseExpression LOWEST))
-          (unless (expectPeek token.COLON) (set! returnValue null) (set! earlyReturn #t) (break))
+          (unless (expectPeek token.COLON) 
+            (printf "EARLY RETURN: ! expectPeek token.COLON\n")
+            (printf "curToken: ~a\n" (send curToken Inspect))
+            (printf "peekToken: ~a\n" (send peekToken Inspect))
+            (set! returnValue null)
+            (set! earlyReturn #t) (break))
           (nextToken)
           (define value (parseExpression LOWEST))
           (hash-set! (get-field Pairs hash) key value)
           (when (and (not (peekTokenIs token.RBRACE))
                      (not (expectPeek token.COMMA)))
+            (printf "EARLY RETURN: ! RBRACE and COMMA\n")
             (set! returnValue null)
             (set! earlyReturn #t)
             (break))))
-
+      
+      (printf "earlyReturn: ~a\n" earlyReturn)
+      (printf "returnValue: ~a\n" returnValue)
       (if earlyReturn
           returnValue
           (if (not (expectPeek token.RBRACE))

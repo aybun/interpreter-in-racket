@@ -334,8 +334,8 @@
                   ("rest([1, 2, 3])" (2 3))
                   ("rest([])" ())
                   ("push([], 1)" (1))
-                  ("push(1, 1)" "argument to `push` must be ARRAY, got INTEGER")
-                  ))
+                  ("push(1, 1)" "argument to `push` must be ARRAY, got INTEGER")))
+                  
 
   (for/list ([tt tests]
              [i (in-naturals 0)])
@@ -369,66 +369,103 @@
   (check-equal? (length (get evaluated Elements)) 3 "check len")
   (testIntegerObject (first (get evaluated Elements)) 1)
   (testIntegerObject (second (get evaluated Elements)) 4)
-  (testIntegerObject (third (get evaluated Elements)) 6)
-  )
+  (testIntegerObject (third (get evaluated Elements)) 6))
+  
 
 (define (TestArrayIndexExpressions)
  (define tests '(
-                 		(
-                       "[1, 2, 3][0]"
-                       1
-                       )
-                      (
-                       "[1, 2, 3][1]"
-                       2
-                       )
-                      (
-                       "[1, 2, 3][2]"
-                       3
-                       )
-                      (
-                       "let i = 0; [1][i];"
-                       1
-                       )
-                      (
-                       "[1, 2, 3][1 + 1];"
-                       3
-                       )
-                      (
-                       "let myArray = [1, 2, 3]; myArray[2];"
-                       3
-                       )
-                      (
-                       "let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];"
-                       6
-                       )
-                      (
-                       "let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]"
-                       2
-                       )
-                      (
-                       "[1, 2, 3][3]"
-                       ()
-                       )
-                      (
-                       "[1, 2, 3][-1]"
-                       ()
-                       )
-                      ))
-  (for/list ([tt tests]
-             [i (in-naturals 0)])
-    (define input (first tt))
-    (define expected (second tt))
+                     (
+                      "[1, 2, 3][0]"
+                      1)
+                       
+                     (
+                      "[1, 2, 3][1]"
+                      2)
+                       
+                     (
+                      "[1, 2, 3][2]"
+                      3)
+                       
+                     (
+                      "let i = 0; [1][i];"
+                      1)
+                       
+                     (
+                      "[1, 2, 3][1 + 1];"
+                      3)
+                       
+                     (
+                      "let myArray = [1, 2, 3]; myArray[2];"
+                      3)
+                       
+                     (
+                      "let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];"
+                      6)
+                       
+                     (
+                      "let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]"
+                      2)
+                       
+                     (
+                      "[1, 2, 3][3]"
+                      ())
+                       
+                     (
+                      "[1, 2, 3][-1]"
+                      ())))
+                       
+                      
+ (for/list ([tt tests]
+            [i (in-naturals 0)])
+   (define input (first tt))
+   (define expected (second tt))
 
-    (define evaluated (testEval input))
+   (define evaluated (testEval input))
 
-    (if (integer? expected)
-        (testIntegerObject evaluated expected)
-        (testNullObject evaluated)))
-  )
+   (if (integer? expected)
+       (testIntegerObject evaluated expected)
+       (testNullObject evaluated))))
+  
 
+(define (TestHashLiterals)
 
+  (define input
+    "let two = \"two\";
+	{
+		\"one\": 10 - 9,
+		two: 1 + 1,
+		\"thr\" + \"ee\": 6 / 2,
+		4: 4,
+		true: 5,
+		false: 6
+	}")
+    
 
+  (define evaluated (testEval input))
+  (check-equal? (is-a? evaluated object.Hash) #t "is-a? object.Hash")
+
+  (define expected 
+    (hash
+      (send (new object.String [Value "one"]) HashKey)      1
+      (send (new object.String [Value  "two"]) HashKey)     2
+      (send (new object.String [Value  "three"]) HashKey)   3
+      (send (new object.Integer [Value 4]) HashKey)    4
+      (send evaluator.TRUE HashKey)                         5
+      (send evaluator.FALSE HashKey)                        6))
+
+  (check-equal? (hash-count (get evaluated Pairs)) (hash-count expected) "len check")
+
+  (printf "expected: ~a\n" expected)
+  
+  (define pair null)
+  (hash-for-each
+    expected    
+    (lambda (expectedKey expectedValue)
+      (set! pair (hash-ref (get evaluated Pairs) expectedKey null))
+      (check-equal? (null? pair) #f "key found?")
+
+      (testIntegerObject (get pair Value) expectedValue))))
+  
 (define (testIntegerObject obj expected)
   (printf "in testIntegerObject\n")
   ;; (printf "obj: ~a, obj.Value: ~a\n" obj (get obj Value))
@@ -476,3 +513,4 @@
 (TestBuiltinFunctions)
 (TestArrayLiterals)
 (TestArrayIndexExpressions)
+(TestHashLiterals)
