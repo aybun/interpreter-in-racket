@@ -465,6 +465,61 @@
       (check-equal? (null? pair) #f "key found?")
 
       (testIntegerObject (get pair Value) expectedValue))))
+
+(define (TestHashIndexExpressions)
+  (define tests '(
+                  (
+                    "{\"foo\": 5}[\"foo\"]"
+                    5)
+    
+                  (
+                   "{\"foo\": 5}[\"bar\"]"
+                   ())
+    
+                  (
+                   "let key = \"foo\"; {\"foo\": 5}[key]"
+                   5)
+    
+                  (
+                   "{}[\"foo\"]"
+                   ())
+    
+                  (
+                   "{5: 5}[5]"
+                   5)
+    
+                  (
+                   "{true: 5}[true]"
+                   5)
+    
+                  (
+                   "{false: 5}[false]"
+                   5)))
+  (for/list ([tt tests]
+             [i (in-naturals 0)])
+    (define input (first tt))
+    (define expected (second tt))
+
+    (define evaluated (testEval input))
+    (cond
+      [(integer? expected) (testIntegerObject evaluated expected)]
+      [else (testNullObject evaluated)])))
+
+  
+  
+    
+                      
+                   
+
+                    
+
+                     
+
+                   
+
+                  
+
+                  
   
 (define (testIntegerObject obj expected)
   (printf "in testIntegerObject\n")
@@ -514,3 +569,4 @@
 (TestArrayLiterals)
 (TestArrayIndexExpressions)
 (TestHashLiterals)
+(TestHashIndexExpressions)
