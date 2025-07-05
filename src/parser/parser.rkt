@@ -110,8 +110,7 @@
                                             (define stmt (parseStatement))
                                             (define statements (get-field Statements program))
                                             (unless (null? stmt) (set-field! Statements program (append statements (list stmt))))
-                                            (nextToken)
-                                            (printf "lenght statements : ~a\n" (length (get-field Statements program)))))
+                                            (nextToken)))
 
       program)
 
