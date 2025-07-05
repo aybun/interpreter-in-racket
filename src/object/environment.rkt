@@ -21,7 +21,6 @@
             (super-new)
             (init-field store outer)
             (define/public (Get name)
-                  (printf "in Environment.Get\n") 
                   (define obj (hash-ref store name 'does-not-exist))
                   (define ok (not (equal? obj 'does-not-exist)))
                   (when (and (not ok) (not (null? outer)))
@@ -29,8 +28,6 @@
                           (define ret (send outer Get name))
                           (set! obj (first ret))
                           (set! ok  (second ret))))
-                  (printf "obj: ~a\n" obj)
-                  (printf "ok: ~a\n" ok)
                   (list obj ok))
 
             (define/public (Set name val)

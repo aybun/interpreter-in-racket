@@ -106,7 +106,6 @@
 
     (define/public (ParseProgram)
       (define program (new ast.Program [Statements (list)]))
-      (printf "in ParseProgram \n ==program== ~a\n" program)
       (while (not (curTokenIs token.EOF)) (begin
                                             (define stmt (parseStatement))
                                             (define statements (get-field Statements program))
@@ -118,10 +117,6 @@
 
 
     (define/private (parseStatement)
-      ;; (printf "in parseStatement\n curToken.Type : ~a\n" (get-field Type curToken))
-      ;; (printf "~a\n" token.LET)
-      ;; (printf "~a\n" token.RETURN)
-      ;; (printf "Type == LET? : ~a\n" (equal? (get-field Type curToken) token.LET) )
       (define type (get-field Type curToken))
       (cond
         [(equal? token.LET    type)    (parseLetStatement)]
@@ -131,7 +126,6 @@
 
 
     (define/private (parseLetStatement)
-      (printf "in parseLetStatement\n")
       (define returnValue null)
       (while #t (begin
 
@@ -150,7 +144,6 @@
                   (set! returnValue
                         (new ast.LetStatement [Token token] [Name name] [Value value]))
 
-                  (printf "In parseLetStatement ~a\n" returnValue)
                   (break)))
                  ; :: END WHILE
 
@@ -169,8 +162,6 @@
 
 
     (define/private (parseExpressionStatement)
-      (printf "in parseExpressionStatement\n")
-      (printf "curToken : ~a\n" (get-field Literal curToken))
       (define token curToken)
       (define expression (parseExpression LOWEST))
       (define stmt (new ast.ExpressionStatement [Token token ] [Expression expression]))
@@ -182,7 +173,6 @@
 
 
     (define/private (dynamicDispatchPrefix symbol)
-        (printf "in dynamicDispatchPrefix\n")
 
 
         (cond
@@ -205,10 +195,6 @@
 
 
     (define/private (dynamicDispatchInfix symbol expr)
-
-      (printf "in dynamicDispatchInfix\n")
-
-
       (cond
 
         [(equal? symbol 'parseInfixExpression) (parseInfixExpression expr)]
@@ -221,7 +207,6 @@
 
 
     (define/private (parseExpression precedence)
-     (printf "in parseExpression\n")
      (define returnValue null)
      (while #t (begin
                    (define prefixSymbol (hash-ref prefixParseFns (get-field Type curToken) null))
@@ -238,7 +223,6 @@
                          (begin
 
                            (define infixSymbol (hash-ref infixParseFns (get-field Type peekToken) null))
-                           (printf "infixSymbol : ~a\n" infixSymbol)
                            (if (null? infixSymbol)
                                (begin
                                  (set! returnValue leftExp)
@@ -277,7 +261,6 @@
 
 
     (define/private (parseIntegerLiteral)
-      (printf "in parseIntegerLiteral\n")
       (define token curToken)
       (define value (string->number (get-field Literal curToken)))
       (if (integer? value)
@@ -286,14 +269,10 @@
           (let ([msg (format "could not parse ~a as integer" (get-field Literal curToken))])
             (set! errors (append errors (list msg))))))
 
-
-
-
     (define/private (parseStringLiteral)
       (new ast.StringLiteral [Token curToken] [Value (get-field Literal curToken)]))
 
     (define/private (parsePrefixExpression)
-      (printf "in parsePrefixExpression\n")
       (define token curToken)
       (define operator (get-field Literal curToken))
 
@@ -306,7 +285,6 @@
 
 
     (define/private (parseInfixExpression left)
-      (printf "in parseInfixExpression\n")
       (define token curToken)
       (define operator (get-field Literal curToken))
 
@@ -370,7 +348,6 @@
     ; ::END parseIfExpression
 
     (define/private (parseBlockStatement)
-      (printf "in parseBlockStatement\n")
       (define token curToken)
       (define statements '())
       (nextToken)
@@ -391,7 +368,6 @@
 
 
     (define/private (parseFunctionLiteral)
-      (printf "in parseFunctionLiteral\n")
       (define returnValue null)
 
       (while #t (begin
@@ -411,7 +387,6 @@
 
 
     (define/private (parseFunctionParameters)
-      (printf "in parseFunctionParameters\n")
       (define returnValue null)
 
 
@@ -506,7 +481,6 @@
           exp))
 
     (define/private (parseHashLiteral)
-      (printf "in parseHashLiteral\n")
       (define hash (new ast.HashLiteral [Token curToken] [Pairs (make-hash '())]))
       (define returnValue null)
       (define earlyReturn #f)
@@ -516,9 +490,6 @@
           (nextToken)
           (define key (parseExpression LOWEST))
           (unless (expectPeek token.COLON) 
-            (printf "EARLY RETURN: ! expectPeek token.COLON\n")
-            (printf "curToken: ~a\n" (send curToken Inspect))
-            (printf "peekToken: ~a\n" (send peekToken Inspect))
             (set! returnValue null)
             (set! earlyReturn #t) (break))
           (nextToken)
@@ -526,13 +497,10 @@
           (hash-set! (get-field Pairs hash) key value)
           (when (and (not (peekTokenIs token.RBRACE))
                      (not (expectPeek token.COMMA)))
-            (printf "EARLY RETURN: ! RBRACE and COMMA\n")
             (set! returnValue null)
             (set! earlyReturn #t)
             (break))))
       
-      (printf "earlyReturn: ~a\n" earlyReturn)
-      (printf "returnValue: ~a\n" returnValue)
       (if earlyReturn
           returnValue
           (if (not (expectPeek token.RBRACE))

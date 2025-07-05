@@ -18,7 +18,6 @@
 
         (set! position readPosition)
         (set! readPosition (add1 readPosition)))
-        ;; (displayln "done")
 
 
 

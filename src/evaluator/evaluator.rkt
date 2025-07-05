@@ -1,6 +1,7 @@
 #lang racket
 
 (require dyoo-while-loop)
+
 (require (prefix-in ast. "../ast/ast.rkt"))
 (require (prefix-in object. "../object/object.rkt"))
 (require (prefix-in object. "../object/environment.rkt"))
@@ -14,8 +15,6 @@
 
 
 (define (Eval node env)
-   (printf "in Eval\n")
-   (printf "node : ~a\n" node)
 
    (cond
       [(is-a? node ast.Program ) (evalProgram node env)]
@@ -106,18 +105,12 @@
 
 
 (define (evalProgram program env)
-  (printf "in evalProgram\n")
   (define result null)
   (define break-loop #f)
   (for/list ([statement (get program Statements)]
              [i (in-naturals 0)]
              #:break break-loop)
       (set! result (Eval statement env))
-      (printf "in loop of evalProgram\n")
-      (printf "i: ~a\n" i)
-      (printf "result: ~a\n" result)
-      (printf "is-a? object.ReturnValue: ~a\n" (is-a? result object.ReturnValue))
-      (printf "is-a? object.Error: ~a\n" (is-a? result object.Error))
 
       (cond
         [(is-a? result object.ReturnValue) (begin
@@ -126,8 +119,6 @@
         [(is-a? result object.Error) (begin
                                        (set! result result)
                                        (set! break-loop #t))]))
-  (printf "before return in evalProgram\n")
-  (printf "result : ~a\n" result)
   result)
 
 
@@ -145,8 +136,6 @@
   result)
 
 (define (nativeBoolToBooleanObject input)
-  (printf "in nativeBoolToBooleanObject\n")
-  (printf "input: ~a\n" input)
 
   (if input
       TRUE
@@ -214,7 +203,6 @@
     (newError "unknown operator: ~a ~a ~a" (send left Type) operator (send right Type))
     (new object.String [Value (string-append (get left Value) (get right Value))])))
 (define (evalIfExpression ie env)
-  (printf "in evalIfExpression\n")
   (define returnValue null)
   (while #t (begin
               (define condition (Eval (get ie Condition) env))
@@ -225,8 +213,6 @@
                                   [(not (null? (get ie Alternative))) (Eval (get ie Alternative) env)]
                                   [else null]))
               (break)))
-  (printf "before return\n")
-  (printf "returnValue: ~a\n" returnValue)
   returnValue)
 
 
@@ -324,7 +310,6 @@
       (list-ref (get array Elements) idx)))
 
 (define (evalHashLiteral node env)
-  (printf "in evalHashLiteral\n")
   (define pairs (make-hash '()))
   (define key null)
   (define value null)
